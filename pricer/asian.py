@@ -1,8 +1,9 @@
 import numpy as np
 import plotly.graph_objects as go
 from pricer.monte_carlo import plotter_first_n_simulations, monte_carlo_simulations
+from custom_templates import cyborg_template
 
-def pricer_asian(S, K, T, r):
+def pricer_asian(S, K, T, r): #! at some point, add the option arithmetic / geometric for mean computation 
     """
     Asian option pricer using Monte Carlo simulations.
     
@@ -34,7 +35,8 @@ def pricer_asian(S, K, T, r):
 
 
 def plotter_asian(S: np.ndarray, 
-                  n_sim_to_plot: int = 10) -> go.Figure:
+                  # fig: go.Figure,
+                  n_sim_to_plot=10) -> go.Figure:
     """
     Add to the base plot of Monte Carlo paths the specificities for Asian options: 
     The average of each trajectory.
@@ -48,8 +50,33 @@ def plotter_asian(S: np.ndarray,
     Returns:
         go.Figure: A Plotly figure object.
     """
-    # Get the base plot from the other function
-    fig = plotter_first_n_simulations(S, n_sim_to_plot)
+    # # Get the base plot from the other function
+    # fig = plotter_first_n_simulations(S, n_sim_to_plot)
+
+    fig = go.Figure()
+
+    # Add traces for the first n_simulations
+    for i in range(n_sim_to_plot):
+        time_steps = np.arange(S.shape[1])
+
+        # Line for the simulation path
+        fig.add_trace(go.Scatter(
+            x=time_steps,
+            y=S[i, :],
+            mode='lines',
+            name=f'Simulation {i+1}',
+            showlegend=True
+        ))
+
+        # Marker for the maximum price
+
+    # Layout settings
+    fig.update_layout(
+        title=f"First {n_sim_to_plot} Monte Carlo Simulations of Stock Prices",
+        xaxis_title="Time Steps",
+        yaxis_title="Stock Price",
+        template="plotly_white"
+    )
 
     # Access the colors used in the base plot
     colors = [trace.line.color for trace in fig.data if trace.mode == 'lines']
@@ -74,7 +101,7 @@ def plotter_asian(S: np.ndarray,
         title=f"First {n_sim_to_plot} Monte Carlo Simulations of Stock Prices, with avg",
         xaxis_title="Time Steps",
         yaxis_title="Stock Price",
-        template="plotly_dark"
+        template=cyborg_template
     )
 
     return fig
@@ -89,6 +116,7 @@ if __name__ == '__main__':
     r = 0.05
     sigma = 0.2
     n_simulations = 100000
+    n_sim_to_plot = 10
 
     Z = np.random.standard_normal((n_simulations, 252))
 
@@ -96,5 +124,7 @@ if __name__ == '__main__':
     S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations)
 
     # Plot 
-    fig = plotter_asian(S, 5)
-    fig.show()
+    # Get the base plot from the other function
+    fig = plotter_first_n_simulations(S, n_sim_to_plot)
+    fig_asian = plotter_asian(S, n_sim_to_plot=10)
+    fig_asian.show()
