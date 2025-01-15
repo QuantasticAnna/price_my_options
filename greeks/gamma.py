@@ -5,6 +5,16 @@ from delta import compute_delta
 # and probably here we compute it again for the same prices, 
 # think abolult a way to do all the simulation for different stocks prices once, and then compute delta, gamma and delta vs stock price and gamma vs stock price
 
+# TODO: 
+    # compute_gamma
+    # gamma_vs_stock_price
+    # gamma_vs_ttm
+    # gamma_vs_vola
+    # plot_gamma_vs_stock_price
+    # plot_3d_gamma_vs_diff_implied_vol
+    # plot_3d_gamma_over_time
+
+    # Implement note above
 
 def compute_gamma(Z: np.ndarray, 
                   S0: float, 
@@ -137,3 +147,5 @@ if __name__ == "__main__":
     # gamma plot has the correct expected bell shape, but is very ugly, probably because not enough monte carlo simulation
     # as gamma is the second derivative, but if we put more simulations, then eveything else will be slowed down 
 
+
+#! Gonna be a bit annoying to plot gamma for differnet TTm and different vol, as i need to make more simulation to have a nice gamma (for one TTm and one vol), and it really increases computation time 

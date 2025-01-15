@@ -1,6 +1,6 @@
 import numpy as np
-from asian import pricer_asian
-from monte_carlo import monte_carlo_simulations
+from pricer.asian import pricer_asian
+from pricer.monte_carlo import monte_carlo_simulations
 import matplotlib.pyplot as plt
 
 # TODO: 
