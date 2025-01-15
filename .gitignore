@@ -98,3 +98,6 @@ Desktop.ini
 
 # Linux
 *~
+
+# Large joblib files 
+.joblib
