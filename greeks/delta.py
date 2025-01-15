@@ -530,11 +530,6 @@ if __name__ == "__main__":
     # # Plot 3D Delta vs Stock Price for Call Options
     plot_3d_delta_vs_strike_price_for_multiple_volatility(results, option_type="call")
 
-    # # Plot 3D Delta vs Stock Price for Put Options
-    # plot_3d_delta_vs_stock_price_for_multiple_volatility(results, option_type="put")
-
-    #! Note: something wrong somewhere, in the book, we have a reversed sigmoid, in my plot i have an normal sigmoid
-    # IN my plot and in the book, its flat and diagonal for high vol, and very steep for low vol, so this part is correct
-    # it should be descending (book) instead of ascending (mine)
-
     # explanantion: its beacuse the graphs on the book, the xaxis is strike price, not stock price 
+    #! In dash, maye instead of making a 3d plot, i can make a 2d graph, with already the values computed for different vol, 
+    # and change it with a slider  

@@ -45,7 +45,7 @@ def monte_carlo_simulations(Z: np.ndarray, # Z is an input of monte carlo, so we
     return S
 
 
-def plotter_first_n_simulations (S: np.ndarray, 
+def plotter_first_n_simulations(S: np.ndarray, 
                                  n_sim_to_plot: int = 10) -> go.Figure:
     """
     Plot the first n_simulations of the stock price matrix S using Plotly.

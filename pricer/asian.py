@@ -35,7 +35,6 @@ def pricer_asian(S, K, T, r): #! at some point, add the option arithmetic / geom
 
 
 def plotter_asian(S: np.ndarray, 
-                  # fig: go.Figure,
                   n_sim_to_plot=10) -> go.Figure:
     """
     Add to the base plot of Monte Carlo paths the specificities for Asian options: 
@@ -50,8 +49,6 @@ def plotter_asian(S: np.ndarray,
     Returns:
         go.Figure: A Plotly figure object.
     """
-    # # Get the base plot from the other function
-    # fig = plotter_first_n_simulations(S, n_sim_to_plot)
 
     fig = go.Figure()
 

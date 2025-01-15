@@ -2,6 +2,7 @@
 from dash import Dash, dcc, html, callback, Input, Output, State
 from dash.dependencies import Input, Output
 import plotly.express as px
+import joblib
 import pandas as pd
 import dash_mantine_components as dmc
 import dash_bootstrap_components as dbc
@@ -11,9 +12,16 @@ from datetime import datetime
 from pricer.monte_carlo import monte_carlo_simulations, plotter_first_n_simulations
 from pricer.asian import plotter_asian
 from pricer.lookback import plotter_lookback
+from custom_templates import cyborg_template
 
-# Global variable to store Z
-Z_global = None
+
+# All stuff relative to Z recomputation are signaled by #ZRECOMPUTE (to do control F easily)
+# Uncomment when we start working on giving the user the option to recompute Z, for now, its too slow, 
+# # Global variable to store Z
+# Z_global = None
+
+# Load precomputed Z
+Z_precomputed = joblib.load("Z_precomputed.joblib")
 
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY])
@@ -28,9 +36,10 @@ menu_bar = html.Div([dmc.SegmentedControl(id = "menu_bar",
                                                 {"value": "value3", "label": "Label 3"},
                                             ])], style = {'margin' : '20px'})
 
-button_generate_z = html.Button("Generate Simulations", id="button_generate_z", n_clicks=0)
-store_z = dcc.Store(id="store_z")
-z_status = html.Div(id="status", style={"margin-top": "20px"})
+#ZRECOMPUTE
+# button_generate_z = html.Button("Generate Simulations", id="button_generate_z", n_clicks=0)
+# store_z = dcc.Store(id="store_z")
+# z_status = html.Div(id="status", style={"margin-top": "20px"})
 
 input_option_params = html.Div([
                                 html.H4("Specify Option Parameters"),
@@ -53,30 +62,31 @@ input_option_params = html.Div([
 
                             ], style={"margin-bottom": "20px"})
 
-plot_first_n_simulations = dcc.Graph(id="plot_first_n_simulations", style={"height": "600px"})
+# plot_first_n_simulations = dcc.Graph(id="plot_first_n_simulations", style={"height": "600px"})
 
 plot_first_n_simulations_asian = dcc.Graph(id="plot_first_n_simulations_asian", style={"height": "600px"})
 
 plot_first_n_simulations_lookback = dcc.Graph(id="plot_first_n_simulations_lookback", style={"height": "600px"})
 
-div_asian = html.Div([html.H4('Asian', style = {'margin' : '20px'})],
+div_asian = html.Div([html.H4('Asian', style = {'margin' : '20px'}),
+                      plot_first_n_simulations_asian,],
                 id = 'div_asian')
 
-div_lookback = html.Div([html.H4('Lookback', style = {'margin' : '20px'})],
+div_lookback = html.Div([html.H4('Lookback', style = {'margin' : '20px'}),
+                         plot_first_n_simulations_lookback,],
                 id = 'div_lookback')  
                        
 div3 = html.Div([html.H4('Div 3', style = {'margin' : '20px'})],
                 id = 'div3')
 
-app.layout = html.Div([menu_bar, 
-                       input_option_params,
-                       plot_first_n_simulations,
-                       plot_first_n_simulations_asian,
-                       plot_first_n_simulations_lookback,
+app.layout = html.Div([input_option_params,
+                       # plot_first_n_simulations,
+                       menu_bar, 
                        div_asian,
                        div_lookback,
                        div3,
-                       html.Div([button_generate_z, store_z, z_status])])
+                       # html.Div([button_generate_z, store_z, z_status]) #ZRECOMPUTE
+                       ])
 
 @callback(
     [Output('div_asian', 'hidden'),
@@ -98,42 +108,63 @@ def show_hidden_div(input_value):
 
     return(show_div_asian, show_div_lookback, show_div3)
 
-@app.callback(
-    Output("status", "children"),  # Update status message
-    Output("store_z", "data"),  # Store Z in dcc.Store
-    Input("button_generate_z", "n_clicks")  # Trigger on button click
-)
-def generate_simulations(n_clicks):
-    global Z_global
-    if n_clicks > 0:
-        # Generate Z and store it globally
-        n_simulations = 100000  # Number of simulations
-        Z = np.random.standard_normal((n_simulations, 252))  # 252 days (e.g., trading days in a year)
-        Z_global = Z  # Store in global variable
-        return f"Simulations generated! at {datetime.now()}", Z.tolist()  # Store Z in dcc.Store as JSON serializable format
-    return "Click the button to generate simulations.", None
+#ZRECOMPUTE
+# @app.callback(
+#     Output("status", "children"),  # Update status message
+#     Output("store_z", "data"),  # Store Z in dcc.Store
+#     Input("button_generate_z", "n_clicks")  # Trigger on button click
+# )
+# def generate_simulations(n_clicks):
+#     global Z_global
+#     if n_clicks > 0:
+#         # Generate Z and store it globally
+#         n_simulations = 100000  # Number of simulations
+#         Z = np.random.standard_normal((n_simulations, 252))  # 252 days (e.g., trading days in a year)
+#         Z_global = Z  # Store in global variable
+#         return f"Simulations generated! at {datetime.now()}", Z.tolist()  # Store Z in dcc.Store as JSON serializable format
+#     return "Click the button to generate simulations.", None
 
 
 @app.callback(
-    Output("plot_first_n_simulations", "figure"),
+    # Output("plot_first_n_simulations", "figure"),
     Output("plot_first_n_simulations_asian", "figure"),
     Output("plot_first_n_simulations_lookback", "figure"),
     Input("button_update_params", "n_clicks"),
     State("input_S0", "value"),
+    State("input_K", "value"),
     State("input_T", "value"),
     State("input_r", "value"),
-    State("input_sigma", "value"),
-    State("store_z", "data")
+    State("input_sigma", "value")
 )
-def show_plot_first_n_simulations(n_clicks, S0, T, r, sigma, Z_data):
-    if n_clicks > 0 and Z_data is not None:
-        Z = np.array(Z_data)  # Convert Z back to NumPy array
+def show_plot_first_n_simulations(n_clicks, S0, K, T, r, sigma): #! Maybe instead of adding a white line at strike, make a grey zone for the OTM (but then we need a specific graph for put, and a specific graph for call)
+    if n_clicks > 0 and Z_precomputed is not None:
+        Z = np.array(Z_precomputed)  # Convert Z back to NumPy array
         S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=100000)
-        fig_S = plotter_first_n_simulations(S, n_sim_to_plot=10)
+        # fig_S = plotter_first_n_simulations(S, n_sim_to_plot=10)
+
         fig_asian = plotter_asian(S, n_sim_to_plot=10)
+        # Add a horizontal line at strike K
+        fig_asian.add_hline(
+            y=K,
+            line=dict(color="white", width=2, dash="dash"),
+            annotation_text=f"Strike Price (K={K})",
+            annotation_position="bottom right",
+        )
+
+        # Add a horizontal line at strike K
         fig_lookback = plotter_lookback(S, n_sim_to_plot=10)
-        return fig_S, fig_asian, fig_lookback
-    return go.Figure(), go.Figure(), go.Figure() # empty figures
+        fig_lookback.add_hline(
+            y=K,
+            line=dict(color="white", width=2, dash="dash"),
+            annotation_text=f"Strike Price (K={K})",
+            annotation_position="bottom right",
+        )
+        # return fig_S, fig_asian, fig_lookback
+        return fig_asian, fig_lookback
+    # return go.Figure(), go.Figure(), go.Figure() # empty figures
+    empty_fig = go.Figure()
+    empty_fig.update_layout(template=cyborg_template)
+    return empty_fig, empty_fig # empty figures
 
 
 # Run the Dash app
