@@ -13,7 +13,7 @@ from pricer.monte_carlo import monte_carlo_simulations, plotter_first_n_simulati
 from pricer.asian import plotter_asian
 from pricer.lookback import plotter_lookback
 from custom_templates import cyborg_template
-
+from greeks.delta import compute_delta, delta_vs_stock_price, plot_delta_vs_stock_price
 
 # All stuff relative to Z recomputation are signaled by #ZRECOMPUTE (to do control F easily)
 # Uncomment when we start working on giving the user the option to recompute Z, for now, its too slow, 
@@ -23,9 +23,14 @@ from custom_templates import cyborg_template
 # Load precomputed Z
 Z_precomputed = joblib.load("Z_precomputed.joblib")
 
+# Predefined volatilities and TTM arrays  # MAKE IT IN A MORE PROPER WAY , constant file? 
+volatility_array = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])  # Annualized volatilities
+ttm_array = np.array([0.0198, 0.0992, 0.3968, 1.0])  # Time to maturity in years (5 days, 25 days, 100 days, 1 year)
+
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY])
-app.title = "Dash App Template"
+
+app.title = "Price My Options"
 
 menu_bar = html.Div([dmc.SegmentedControl(id = "menu_bar",
                                             value = "asian",
@@ -41,26 +46,57 @@ menu_bar = html.Div([dmc.SegmentedControl(id = "menu_bar",
 # store_z = dcc.Store(id="store_z")
 # z_status = html.Div(id="status", style={"margin-top": "20px"})
 
+# input_option_params = html.Div([
+#                                 html.H4("Specify Option Parameters"),
+#                                 html.Label("Initial Stock Price (S0):"),
+#                                 dcc.Input(id="input_S0", type="number", value=100, step=1),
+                                
+#                                 html.Label("Strike Price (K):"),
+#                                 dcc.Input(id="input_K", type="number", value=100, step=1),
+                                
+#                                 html.Label("Time to Maturity (T):"),
+#                                 dcc.Input(id="input_T", type="number", value=1, step=0.1),
+                                
+#                                 html.Label("Risk-Free Rate (r):"),
+#                                 dcc.Input(id="input_r", type="number", value=0.05, step=0.01),
+                                
+#                                 html.Label("Volatility (σ):"),
+#                                 dcc.Input(id="input_sigma", type="number", value=0.2, step=0.01),
+
+#                                 html.Button("Update Parameters", id="button_update_params", n_clicks=0, style={"margin-top": "20px"}),
+
+#                             ], style={"margin-bottom": "20px"})
+
 input_option_params = html.Div([
-                                html.H4("Specify Option Parameters"),
-                                html.Label("Initial Stock Price (S0):"),
-                                dcc.Input(id="input_S0", type="number", value=100, step=1),
-                                
-                                html.Label("Strike Price (K):"),
-                                dcc.Input(id="input_K", type="number", value=100, step=1),
-                                
-                                html.Label("Time to Maturity (T):"),
-                                dcc.Input(id="input_T", type="number", value=1, step=0.1),
-                                
-                                html.Label("Risk-Free Rate (r):"),
-                                dcc.Input(id="input_r", type="number", value=0.05, step=0.01),
-                                
-                                html.Label("Volatility (σ):"),
-                                dcc.Input(id="input_sigma", type="number", value=0.2, step=0.01),
-
-                                html.Button("Update Parameters", id="button_update_params", n_clicks=0, style={"margin-top": "20px"}),
-
-                            ], style={"margin-bottom": "20px"})
+    html.H4("Specify Option Parameters"),
+    html.Table([
+        html.Tr([
+            html.Td(html.Label("Initial Stock Price (S0):")),
+            html.Td(dcc.Input(id="input_S0", type="number", value=100, step=1)),
+        ]),
+        html.Tr([
+            html.Td(html.Label("Strike Price (K):")),
+            html.Td(dcc.Input(id="input_K", type="number", value=100, step=1)),
+        ]),
+        html.Tr([
+            html.Td(html.Label("Time to Maturity (T):")),
+            html.Td(dcc.Input(id="input_T", type="number", value=1, step=0.1)),
+        ]),
+        html.Tr([
+            html.Td(html.Label("Risk-Free Rate (r):")),
+            html.Td(dcc.Input(id="input_r", type="number", value=0.05, step=0.01)),
+        ]),
+        html.Tr([
+            html.Td(html.Label("Volatility (σ):")),
+            html.Td(dcc.Input(id="input_sigma", type="number", value=0.2, step=0.01)),
+        ]),
+        html.Tr([
+            html.Td(colSpan=2, children=[
+                html.Button("Update Parameters", id="button_update_params", n_clicks=0, style={"margin-top": "20px"})
+            ], style={"text-align": "center"})
+        ])
+    ], style={"width": "100%", "border-spacing": "10px", "border-collapse": "separate"})
+], style={"margin-bottom": "20px"})
 
 # plot_first_n_simulations = dcc.Graph(id="plot_first_n_simulations", style={"height": "600px"})
 
@@ -68,8 +104,51 @@ plot_first_n_simulations_asian = dcc.Graph(id="plot_first_n_simulations_asian", 
 
 plot_first_n_simulations_lookback = dcc.Graph(id="plot_first_n_simulations_lookback", style={"height": "600px"})
 
+# greeks_asian = html.Div([delta_call_asian, 
+#                          delta_put_asian, 
+#                          delta_call_vs_stock_price_asian,
+#                         #  delta_put_vs_stock_price_asian,  # Necessary? Useful?
+#                          delta_call_vs_strike_price_asian, 
+#                          #  delta_put_vs_strike_price_asian,  # Necessary? Useful?
+#                          slider_volatilities_asian,
+#                          delta_vs_strike_price_for_multiple_volatility_asian, # again, call and put distinction? 
+#                          slider_ttm_asian, 
+#                          delta_vs_strike_price_for_multiple_TTM_asian,
+#                          ])
+
+delta_asian_values = html.Div([html.Label("Delta Call Asian:"), 
+                               html.P(id = 'delta-call-asian'),
+                               html.Label("Delta Put Asian:"), 
+                               html.P(id = 'delta-put-asian')])
+
+figure_delta_call_vs_stock_price_asian = dcc.Graph(id="plot_delta_call_vs_stock_price_asian", style={"height": "600px"})
+
+slider_volatilities_asian = html.Div([html.Label("Time to Maturity (Years):"),
+                                        dcc.Slider(
+                                            id="slider-ttm",
+                                            min=0,
+                                            max=len(ttm_array) - 1,
+                                            step=1,
+                                            marks={i: f"{ttm_array[i]}y" for i in range(len(ttm_array))},
+                                            value=3  # Default index corresponding to 1 year
+                                        )])
+
+slider_ttm_asian = html.Div([html.Label("Volatility (%):"),
+                                    dcc.Slider(
+                                        id="slider-volatility-asian",
+                                        min=0.1,
+                                        max=0.6,
+                                        step=None,
+                                        marks={i: f"{volatility_array[i]*100:.0f}%" for i in range(len(volatility_array))},
+                                        value=0.2,  # Default value
+                                    )])
+
 div_asian = html.Div([html.H4('Asian', style = {'margin' : '20px'}),
-                      plot_first_n_simulations_asian,],
+                      plot_first_n_simulations_asian,
+                      delta_asian_values,
+                      figure_delta_call_vs_stock_price_asian,
+                      slider_volatilities_asian,
+                      slider_ttm_asian],
                 id = 'div_asian')
 
 div_lookback = html.Div([html.H4('Lookback', style = {'margin' : '20px'}),
@@ -166,6 +245,53 @@ def show_plot_first_n_simulations(n_clicks, S0, K, T, r, sigma): #! Maybe instea
     empty_fig.update_layout(template=cyborg_template)
     return empty_fig, empty_fig # empty figures
 
+@app.callback(
+    [Output('delta-call-asian', 'children'),
+     Output('delta-put-asian', 'children')],
+     Input('menu_bar', 'value'), ## at a later stage we will the value of the menu bar? for now, hardcoded for asian
+     Input("button_update_params", "n_clicks"),
+    State("input_S0", "value"),
+    State("input_K", "value"),
+    State("input_T", "value"),
+    State("input_r", "value"),
+    State("input_sigma", "value"))
+def show_delta_values_asian(menu_bar_value, n_clicks, S0, K, T, r, sigma):
+    h = 0.01
+    exotic_type = 'asian' # later will be value of menu bar 
+
+    if n_clicks > 0 and Z_precomputed is not None:
+        deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic_type) # for asian, no kwargs
+        return html.Div(f"{deltas['delta_call']*100:.2f}%"), html.Div(f"{(1 - deltas['delta_call'])*100:.2f}%")
+
+    else: 
+        # return empty values
+        return html.Div(''), html.Div('')
+
+
+@app.callback(
+    Output('plot_delta_call_vs_stock_price_asian', 'figure'),
+     Input('menu_bar', 'value'), ## at a later stage we will the value of the menu bar? for now, hardcoded for asian
+     Input("button_update_params", "n_clicks"),
+    State("input_S0", "value"),
+    State("input_K", "value"),
+    State("input_T", "value"),
+    State("input_r", "value"),
+    State("input_sigma", "value"))
+def show_delta_plots(menu_bar_value, n_clicks, S0, K, T, r, sigma):
+    h = 0.01
+    S0_range = np.linspace(50, 150, 20)  # Shoule be flexible depending on input parameters
+    exotic_type = 'asian' # later will be value of menu bar 
+
+    if n_clicks > 0 and Z_precomputed is not None:
+
+        fig  = plot_delta_vs_stock_price(Z_precomputed, S0_range, K, T, r, sigma, h, exotic_type)# for asian, no kwargs
+        return fig
+    
+    else: 
+        empty_fig = go.Figure()
+        empty_fig.update_layout(template=cyborg_template)
+        return empty_fig
+    
 
 # Run the Dash app
 if __name__ == "__main__":

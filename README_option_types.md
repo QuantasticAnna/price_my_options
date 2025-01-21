@@ -2,7 +2,7 @@
 
 This document provides definitions for the various exotic options supported by the project.
 
-## 1. Asian Options
+## 1. Asian Options  DONE
 Asian options are path-dependent options where the payoff depends on the average price of the underlying asset over a specified period.
 
 - **Asian Call Option**:
@@ -15,7 +15,7 @@ Asian options are path-dependent options where the payoff depends on the average
 
 ---
 
-## 2. Barrier Options
+## 2. Barrier Options NEXT TODO
 Barrier options are options that are activated (knock-in) or deactivated (knock-out) if the underlying asset reaches a specific barrier price during the option's life.
 
 - **Down-and-Out Call Option**:
@@ -28,7 +28,7 @@ Barrier options are options that are activated (knock-in) or deactivated (knock-
 
 ---
 
-## 3. Lookback Options
+## 3. Lookback Options DONE
 Lookback options allow the holder to "look back" at the underlying asset's price history to determine the payoff, using the maximum or minimum price during the option's life.
 
 - **Lookback Call Option**:
@@ -63,7 +63,7 @@ Cliquet options (ratchet options) have a series of reset dates where gains are l
 
 ---
 
-## 6. Range Options
+## 6. Range Options NEXT TODO
 Range options depend on how long the underlying asset stays within a predefined price range.
 
 - **Range Option Payoff**:

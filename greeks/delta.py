@@ -4,6 +4,8 @@ from pricer.monte_carlo import plotter_first_n_simulations, monte_carlo_simulati
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from config import pricer_mapping
+from plotly.graph_objects import Surface
+from custom_templates import cyborg_template
 
 # TODO: 
     # compute_delta
@@ -13,58 +15,6 @@ from config import pricer_mapping
     # plot_delta_vs_stock_price
     # plot_3d_delta_vs_diff_implied_vol
     # plot_3d_delta_over_time
-
-# def compute_delta(Z: np.ndarray, 
-#                   S0: float,
-#                   K: float, 
-#                   T: float, 
-#                   r: float, 
-#                   sigma: float, 
-#                   h: float,
-#                   n_simulations: int = 100000) -> float:
-#     """
-
-#     TO UPDATE
-
-#     Compute Delta for an Asian option
-
-#     Parameters:
-
-#         K (float): Strike price.
-#         T (float): Time to maturity.
-#         r (float): Risk-free rate.
-#         h (float): Small increment for Delta calculation.
-
-#     Returns:
-#         float: Estimated Delta.
-#     """
-
-#     S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations)
-#     S_h = monte_carlo_simulations(Z, S0 + h, T, r, sigma, n_simulations)
-
-#     # Note: here, when other pricers will be implement, there will be a if type == 'asian', elif 'barrier' etc
-
-#     # Price Asian options for both S and S_h
-#     prices_S = pricer_asian(S, K, T, r)
-#     prices_S_h = pricer_asian(S_h, K, T, r)
-
-#     # Extract prices for call options
-#     price_call_S = prices_S['price_call']
-#     price_call_S_h = prices_S_h['price_call']
-
-#     # Compute Delta via finite difference
-#     delta_call = (price_call_S_h - price_call_S) / h
-
-#     # Extract prices for put options
-#     price_put_S = prices_S['price_put']
-#     price_put_S_h = prices_S_h['price_put']
-
-#     # Compute Delta via finite difference
-#     delta_put = (price_put_S_h - price_put_S) / h
-
-
-#     return {'delta_call': delta_call,
-#             'delta_put': delta_put} 
 
 def compute_delta(Z: np.ndarray, 
                   S0: float,
@@ -268,11 +218,13 @@ def plot_delta_vs_stock_price(Z: np.ndarray,
         xaxis_title="Stock Price (S0)",
         yaxis_title="Delta",
         legend=dict(title="Option Type"),
-        template="plotly_white"
+        template=cyborg_template
     )
 
-    # Show the figure
-    fig.show()
+    # # Show the figure
+    # fig.show()
+
+    return(fig)
 
 
 def plot_delta_vs_strike_price(Z: np.ndarray, 
@@ -337,7 +289,7 @@ def plot_delta_vs_strike_price(Z: np.ndarray,
         xaxis_title="Strike Price (K)",
         yaxis_title="Delta",
         legend=dict(title="Option Type"),
-        template="plotly_white"
+        template=cyborg_template
     )
 
     # Show the figure
@@ -433,63 +385,56 @@ def plot_3d_delta_vs_strike_price_for_multiple_volatility(results: dict, option_
     fig.show()
 
 
+def delta_vs_strike_price_for_multiple_TTM(Z: np.ndarray, 
+                                                 S0: float, 
+                                                 sigma: float, 
+                                                 K_range: np.ndarray, 
+                                                 TTM_array: np.ndarray, 
+                                                 r: float, 
+                                                 h: float, 
+                                                 exotic_type: str, 
+                                                 n_simulations: int = 100000,
+                                                 **kwargs) -> dict:
+    """
+    Compute a matrix of Delta values for multiple volatilities and stock prices.
 
-def delta_vs_ttm():
-    pass
+    Parameters:
+        Z (np.ndarray): Precomputed random normals for Monte Carlo simulation.
+        S0_range (np.ndarray): Array of stock prices to evaluate.
+        sigma (float): Volatility.
+        K (float): Strike price.
+        TTM_array (np.ndarray): Array of different times to maturiy
+        r (float): Risk-free rate.
+        h (float): Small increment for Delta calculation.
+        exotic_type (str): Type of exotic option (e.g., "asian", "barrier").
+        n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
+        **kwargs: Additional parameters for specific exotic options (e.g., "barrier" for barrier options).
 
-def delta_vs_vol():
-    pass
+    Returns:
+        dict: Dictionary containing:
+              - 'stock_price': S0_range
+              - 'TTM': times to maturity
+              - 'delta_matrix_call': 2D array of Call Deltas
+              - 'delta_matrix_put': 2D array of Put Deltas
+    """
+    delta_matrix_call = []
+    delta_matrix_put = []
 
-# if __name__ == "__main__":
-#     # Parameters
-#     S0 = 100  # Initial stock price
-#     T = 1  # Time to maturity (1 year)
-#     r = 0.05  # Risk-free rate
-#     sigma = 0.2  # Volatility
-#     K = 100  # Strike price
-#     h = 0.01  # Small shift for Delta
-#     n_simulations = 100000
+    # Iterate over volatilities
+    for TTM in TTM_array:
+        # Compute Delta for each volatility
+        results = delta_vs_strike_price(Z, S0, K_range, TTM, r, sigma, h, exotic_type, n_simulations, **kwargs)
+        delta_matrix_call.append(results['delta_call'])
+        delta_matrix_put.append(results['delta_put'])
 
-
-#     # Define stock price range
-#     S0_range = np.linspace(50, 150, 20)  # Stock prices from 50 to 150
-
-#     # Generate Z once
-#     Z = np.random.standard_normal((n_simulations, 252))
-
-#     # Plot Delta vs Stock Price
-
-#     plot_delta_vs_stock_price(
-#         Z=Z,
-#         S0_range=S0_range,
-#         K=100,
-#         T=1,
-#         r=0.05,
-#         sigma=0.2,
-#         h=0.01,
-#         exotic_type="asian",
-#         n_simulations=100000,
-#         # barrier=120  # Barrier parameter
-#     )
-
-#     delta = compute_delta(
-#     Z=Z,
-#     S0=100,
-#     K=100,
-#     T=1,
-#     r=0.05,
-#     sigma=0.2,
-#     h=0.01,
-#     exotic_type="asian",
-#     # barrier=120  # Additional parameter for barrier options
-
-# )
-    
-#     print(delta)
+    return {
+        'strike_price': K_range,
+        'TTM': volatilities,
+        'delta_matrix_call': np.array(delta_matrix_call),
+        'delta_matrix_put': np.array(delta_matrix_put)
+    }
 
 
-import numpy as np
-from plotly.graph_objects import Surface
 
 if __name__ == "__main__":
     # Define parameters
