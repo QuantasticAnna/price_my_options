@@ -225,6 +225,12 @@ def plot_delta_vs_stock_price(Z: np.ndarray,
             yanchor="top",  # Anchor legend to the top of its box
             orientation="h"  # Horizontal legend layout
         ),
+        margin=dict(
+        l=20,  # Left margin
+        r=20,  # Right margin
+        t=50,  # Top margin
+        b=10   # Bottom margin
+        ),
         template=cyborg_template
     )
 
@@ -342,22 +348,19 @@ def delta_vs_strike_price_for_multiple_volatility(Z: np.ndarray,
               - 'delta_matrix_call': 2D array of Call Deltas
               - 'delta_matrix_put': 2D array of Put Deltas
     """
-    delta_matrix_call = []
-    delta_matrix_put = []
+
+    dict_delta_call = {}
+    dict_delta_put = {}
 
     # Iterate over volatilities
     for sigma in volatilities:
         # Compute Delta for each volatility
         results = delta_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic_type, n_simulations, **kwargs)
-        delta_matrix_call.append(results['delta_call'])
-        delta_matrix_put.append(results['delta_put'])
 
-    return {
-        'strike_price': K_range,
-        'volatility': volatilities,
-        'delta_matrix_call': np.array(delta_matrix_call),
-        'delta_matrix_put': np.array(delta_matrix_put)
-    }
+        dict_delta_call[sigma] = results['delta_call']
+        dict_delta_put[sigma] = results['delta_put']
+
+    return dict_delta_call, dict_delta_put
 
 
 def plot_3d_delta_vs_strike_price_for_multiple_volatility(results: dict, option_type: str = "call"):
@@ -434,6 +437,8 @@ def delta_vs_strike_price_for_multiple_TTM(Z: np.ndarray,
     delta_matrix_call = []
     delta_matrix_put = []
 
+
+
     # Iterate over volatilities
     for TTM in TTM_array:
         # Compute Delta for each volatility
@@ -443,7 +448,7 @@ def delta_vs_strike_price_for_multiple_TTM(Z: np.ndarray,
 
     return {
         'strike_price': K_range,
-        'TTM': volatilities,
+        'TTM': TTM_array,
         'delta_matrix_call': np.array(delta_matrix_call),
         'delta_matrix_put': np.array(delta_matrix_put)
     }
@@ -454,7 +459,7 @@ if __name__ == "__main__":
     # Define parameters
     S0_range = np.linspace(50, 150, 20)  # Stock price range (as ndarray)
     S0 = 100
-    volatilities = np.array([0.1, 0.2, 0.3, 0.4, 0.5])  # Volatility range (as ndarray)
+    volatilities = np.array([0.1, 0.2, 0.3])  # Volatility range (as ndarray)
     sigma = 0.1
     Z = np.random.standard_normal((100000, 252))  # Precomputed random normals
     K = 100  # Strike price
@@ -474,7 +479,7 @@ if __name__ == "__main__":
     #                           exotic_type)
     
     # # Compute Delta matrix for multiple volatilities
-    results = delta_vs_strike_price_for_multiple_volatility(
+    results, dict_to_return_call, dict_to_return_put = delta_vs_strike_price_for_multiple_volatility(
         Z=Z,
         S0=S0,
         volatilities=volatilities,
