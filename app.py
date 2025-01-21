@@ -39,33 +39,13 @@ menu_bar = html.Div([dmc.SegmentedControl(id = "menu_bar",
                                                 {"value": "asian", "label": "Asian"},
                                                 {"value": "lookback", "label": "Lookback"},
                                                 {"value": "value3", "label": "Label 3"},
-                                            ])], style = {'margin' : '20px'})
+                                            ])])
 
 #ZRECOMPUTE
 # button_generate_z = html.Button("Generate Simulations", id="button_generate_z", n_clicks=0)
 # store_z = dcc.Store(id="store_z")
 # z_status = html.Div(id="status", style={"margin-top": "20px"})
 
-# input_option_params = html.Div([
-#                                 html.H4("Specify Option Parameters"),
-#                                 html.Label("Initial Stock Price (S0):"),
-#                                 dcc.Input(id="input_S0", type="number", value=100, step=1),
-                                
-#                                 html.Label("Strike Price (K):"),
-#                                 dcc.Input(id="input_K", type="number", value=100, step=1),
-                                
-#                                 html.Label("Time to Maturity (T):"),
-#                                 dcc.Input(id="input_T", type="number", value=1, step=0.1),
-                                
-#                                 html.Label("Risk-Free Rate (r):"),
-#                                 dcc.Input(id="input_r", type="number", value=0.05, step=0.01),
-                                
-#                                 html.Label("Volatility (σ):"),
-#                                 dcc.Input(id="input_sigma", type="number", value=0.2, step=0.01),
-
-#                                 html.Button("Update Parameters", id="button_update_params", n_clicks=0, style={"margin-top": "20px"}),
-
-#                             ], style={"margin-bottom": "20px"})
 
 input_option_params = html.Div([
     html.H4("Specify Option Parameters"),
@@ -100,9 +80,9 @@ input_option_params = html.Div([
 
 # plot_first_n_simulations = dcc.Graph(id="plot_first_n_simulations", style={"height": "600px"})
 
-plot_first_n_simulations_asian = dcc.Graph(id="plot_first_n_simulations_asian", style={"height": "600px"})
+plot_first_n_simulations_asian = dcc.Graph(id="plot_first_n_simulations_asian", style={"height": "500px"})
 
-plot_first_n_simulations_lookback = dcc.Graph(id="plot_first_n_simulations_lookback", style={"height": "600px"})
+plot_first_n_simulations_lookback = dcc.Graph(id="plot_first_n_simulations_lookback", style={"height": "500px"})
 
 # greeks_asian = html.Div([delta_call_asian, 
 #                          delta_put_asian, 
@@ -143,12 +123,94 @@ slider_ttm_asian = html.Div([html.Label("Volatility (%):"),
                                         value=0.2,  # Default value
                                     )])
 
+div_delta_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Delta', className="text-center")),
+                            dbc.CardBody([delta_asian_values,
+                                    figure_delta_call_vs_stock_price_asian,
+                                    slider_volatilities_asian,
+                                    slider_ttm_asian,]),
+                                    ], style = {'margin-bottom': '20px'})
+
+div_gamma_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Gamma', className="text-center")),
+                            dbc.CardBody([html.P('Values'),
+                                            html.P('Plot1'),
+                                            html.P('Plot2')],),
+                                    ], style = {'margin-bottom': '20px'})
+
+div_vega_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Vega', className="text-center")),
+                            dbc.CardBody([html.P('Values'),
+                                            html.P('Plot1'),
+                                            html.P('Plot2')],),
+                                    ], style = {'margin-bottom': '20px'})
+
+div_theta_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Theta', className="text-center")),
+                            dbc.CardBody([html.P('Values'),
+                                            html.P('Plot1'),
+                                            html.P('Plot2')],),
+                                    ], style = {'margin-bottom': '20px'})
+
+div_rho_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Rho', className="text-center")),
+                            dbc.CardBody([html.P('Values'),
+                                            html.P('Plot1'),
+                                            html.P('Plot2')],),
+                                    ], style = {'margin-bottom': '20px'})
+
+div_greeks_asian = dbc.Container([html.H4("Greeks for Asian Options", className="text-center"),
+                                    dbc.Row(dbc.Col(div_delta_asian, width=11), justify="center"),
+                                    dbc.Row(dbc.Col(div_gamma_asian, width=11), justify="center"),
+                                    dbc.Row(dbc.Col(div_vega_asian, width=11), justify="center"),
+                                    dbc.Row(dbc.Col(div_theta_asian, width=11), justify="center"),
+                                    dbc.Row(dbc.Col(div_rho_asian, width=11), justify="center"),],
+                                    style={"padding-top": "20px",
+                                            "padding-left": "20px",
+                                            "padding-right": "20px"}
+                                        
+                                )
+
+div_greeks_asian_accordion = dbc.Container(
+    [
+        html.H4("Greeks for Asian Options", className="text-center"),
+        dbc.Accordion(
+            [
+                dbc.AccordionItem(
+                    div_delta_asian,
+                    title="Delta"
+                ),
+                dbc.AccordionItem(
+                    div_gamma_asian,
+                    title="Gamma"
+                ),
+                dbc.AccordionItem(
+                    div_vega_asian,
+                    title="Vega"
+                ),
+                dbc.AccordionItem(
+                    div_theta_asian,
+                    title="Theta"
+                ),
+                dbc.AccordionItem(
+                    div_rho_asian,
+                    title="Rho"
+                ),
+            ],
+            # flush=True,  # Optional: Removes borders between items for a cleaner look
+            start_collapsed=True,
+            always_open=True,  # Optional: Allow multiple sections to be open at once
+        )
+    ],
+    style={
+        "padding-top": "20px",
+        "padding-left": "20px",
+        "padding-right": "20px"
+    }
+)
+
+
 div_asian = html.Div([html.H4('Asian', style = {'margin' : '20px'}),
-                      plot_first_n_simulations_asian,
-                      delta_asian_values,
-                      figure_delta_call_vs_stock_price_asian,
-                      slider_volatilities_asian,
-                      slider_ttm_asian],
+                      dbc.Row([dbc.Col(plot_first_n_simulations_asian, width=9),
+                                dbc.Col(input_option_params, width=3)]),
+                      dbc.Row([div_greeks_asian_accordion,
+                               # div_greeks_asian
+                               ])],
                 id = 'div_asian')
 
 div_lookback = html.Div([html.H4('Lookback', style = {'margin' : '20px'}),
@@ -158,14 +220,15 @@ div_lookback = html.Div([html.H4('Lookback', style = {'margin' : '20px'}),
 div3 = html.Div([html.H4('Div 3', style = {'margin' : '20px'})],
                 id = 'div3')
 
-app.layout = html.Div([input_option_params,
+app.layout = html.Div([html.H1('Price My Options'),
+                        # input_option_params, # for now we focus on asian, so we put this is div asian
                        # plot_first_n_simulations,
                        menu_bar, 
                        div_asian,
                        div_lookback,
                        div3,
                        # html.Div([button_generate_z, store_z, z_status]) #ZRECOMPUTE
-                       ])
+                       ], style = {'margin' : '20px'})
 
 @callback(
     [Output('div_asian', 'hidden'),

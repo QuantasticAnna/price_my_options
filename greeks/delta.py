@@ -214,10 +214,17 @@ def plot_delta_vs_stock_price(Z: np.ndarray,
 
     # Update layout
     fig.update_layout(
-        title="Delta vs Stock Price",
-        xaxis_title="Stock Price (S0)",
+        title="Delta vs Strike Price",
+        xaxis_title="Strike Price (K)",
         yaxis_title="Delta",
-        legend=dict(title="Option Type"),
+        legend=dict(
+            title="Option Type",
+            x=0.5,  # Center horizontally
+            y=-0.3,  # Place below the graph
+            xanchor="center",  # Anchor legend at its center horizontally
+            yanchor="top",  # Anchor legend to the top of its box
+            orientation="h"  # Horizontal legend layout
+        ),
         template=cyborg_template
     )
 
@@ -288,7 +295,14 @@ def plot_delta_vs_strike_price(Z: np.ndarray,
         title="Delta vs Strike Price",
         xaxis_title="Strike Price (K)",
         yaxis_title="Delta",
-        legend=dict(title="Option Type"),
+        legend=dict(
+            title="Option Type",
+            x=0.5,  # Center horizontally
+            y=-0.3,  # Place below the graph
+            xanchor="center",  # Anchor legend at its center horizontally
+            yanchor="top",  # Anchor legend to the top of its box
+            orientation="h"  # Horizontal legend layout
+        ),
         template=cyborg_template
     )
 
