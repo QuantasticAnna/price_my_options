@@ -13,6 +13,7 @@ from pricer.monte_carlo import monte_carlo_simulations, plotter_first_n_simulati
 from pricer.asian import plotter_asian
 from pricer.lookback import plotter_lookback
 from custom_templates import cyborg_template
+import dash_table
 from greeks.delta import compute_delta, delta_vs_stock_price, plot_delta_vs_stock_price
 
 # All stuff relative to Z recomputation are signaled by #ZRECOMPUTE (to do control F easily)
@@ -46,41 +47,113 @@ menu_bar = html.Div([dmc.SegmentedControl(id = "menu_bar",
 # store_z = dcc.Store(id="store_z")
 # z_status = html.Div(id="status", style={"margin-top": "20px"})
 
+input_option_params = dbc.Container(
+    [
+        html.H4("Specify Option Parameters", className="text-center text-light"),
+        dbc.Table(
+            [
+                html.Thead(
+                    html.Tr(
+                        [
+                            html.Th("Parameter", className="text-light", style={"width": "70%"}),
+                            html.Th("Value", className="text-light", style={"width": "30%"}),
+                        ]
+                    )
+                ),
+                html.Tbody(
+                    [
+                        html.Tr(
+                            [
+                                html.Td("Initial Stock Price (S0):", className="text-light", style={"whiteSpace": "nowrap"}),
+                                html.Td(dcc.Input(id="input_S0", type="number", value=100, step=1, style={"height": "30px",
+                                                                                                           'width': '60px'})),
+                            ]
+                        ),
+                        html.Tr(
+                            [
+                                html.Td("Strike Price (K):", className="text-light", style={"whiteSpace": "nowrap"}),
+                                html.Td(dcc.Input(id="input_K", type="number", value=100, step=1, style={"height": "30px",
+                                                                                                         'width': '60px'})),
+                            ]
+                        ),
+                        html.Tr(
+                            [
+                                html.Td("Time to Maturity (T):", className="text-light", style={"whiteSpace": "nowrap"}),
+                                html.Td(dcc.Input(id="input_T", type="number", value=1, step=0.1, style={"height": "30px",
+                                                                                                         'width': '60px'})),
+                            ]
+                        ),
+                        html.Tr(
+                            [
+                                html.Td("Risk-Free Rate (r):", className="text-light", style={"whiteSpace": "nowrap"}),
+                                html.Td(dcc.Input(id="input_r", type="number", value=0.05, step=0.01, style={"height": "30px",
+                                                                                                            'width': '60px'})),
+                            ]
+                        ),
+                        html.Tr(
+                            [
+                                html.Td("Volatility (σ):", className="text-light", style={"whiteSpace": "nowrap"}),
+                                html.Td(dcc.Input(id="input_sigma", type="number", value=0.2, step=0.01, style={"height": "30px",
+                                                                                                                'width': '60px'})),
+                            ]
+                        ),
+                    ]
+                ),
+            ],
+            bordered=True,
+            dark=True,
+            hover=True,
+            responsive=True,
+            striped=True,
+            style={"margin-top": "20px"},
+        ),
+        html.Div(
+            html.Button("Update Parameters", id="button_update_params", n_clicks=0, className="btn btn-primary mt-3"),
+            style={"textAlign": "center"},
+        ),
+    ],
+    fluid=True,
+    style={"margin-bottom": "20px"},
+)
 
-input_option_params = html.Div([
-    html.H4("Specify Option Parameters"),
-    html.Table([
-        html.Tr([
-            html.Td(html.Label("Initial Stock Price (S0):")),
-            html.Td(dcc.Input(id="input_S0", type="number", value=100, step=1)),
-        ]),
-        html.Tr([
-            html.Td(html.Label("Strike Price (K):")),
-            html.Td(dcc.Input(id="input_K", type="number", value=100, step=1)),
-        ]),
-        html.Tr([
-            html.Td(html.Label("Time to Maturity (T):")),
-            html.Td(dcc.Input(id="input_T", type="number", value=1, step=0.1)),
-        ]),
-        html.Tr([
-            html.Td(html.Label("Risk-Free Rate (r):")),
-            html.Td(dcc.Input(id="input_r", type="number", value=0.05, step=0.01)),
-        ]),
-        html.Tr([
-            html.Td(html.Label("Volatility (σ):")),
-            html.Td(dcc.Input(id="input_sigma", type="number", value=0.2, step=0.01)),
-        ]),
-        html.Tr([
-            html.Td(colSpan=2, children=[
-                html.Button("Update Parameters", id="button_update_params", n_clicks=0, style={"margin-top": "20px"})
-            ], style={"text-align": "center"})
-        ])
-    ], style={"width": "100%", "border-spacing": "10px", "border-collapse": "separate"})
-], style={"margin-bottom": "20px"})
+option_pricing_table = dbc.Table(
+    [
+        html.Thead(
+            html.Tr(
+                [
+                    html.Th("Option", className="text-light", style={"width": "70%"}),  # Option column
+                    html.Th("Price", className="text-light", style={"width": "30%"}),   # Price column
+                ]
+            )
+        ),
+        html.Tbody(
+            [
+                html.Tr(
+                    [
+                        html.Td("Call", className="text-light", style={"whiteSpace": "nowrap"}),  # Call row
+                        html.Td(html.Div(id="price_call", className="text-light")),               # Placeholder for Call price
+                    ]
+                ),
+                html.Tr(
+                    [
+                        html.Td("Put", className="text-light", style={"whiteSpace": "nowrap"}),   # Put row
+                        html.Td(html.Div(id="price_put", className="text-light")),                # Placeholder for Put price
+                    ]
+                ),
+            ]
+        ),
+    ],
+    bordered=True,
+    dark=True,
+    hover=True,
+    responsive=True,
+    striped=True,
+    style={"margin-top": "20px"},
+)
 
 # plot_first_n_simulations = dcc.Graph(id="plot_first_n_simulations", style={"height": "600px"})
 
-plot_first_n_simulations_asian = dcc.Graph(id="plot_first_n_simulations_asian", style={"height": "500px"})
+plot_first_n_simulations_asian = dcc.Graph(id="plot_first_n_simulations_asian", style={"height": "700px"})
 
 plot_first_n_simulations_lookback = dcc.Graph(id="plot_first_n_simulations_lookback", style={"height": "500px"})
 
@@ -95,6 +168,32 @@ plot_first_n_simulations_lookback = dcc.Graph(id="plot_first_n_simulations_lookb
 #                          slider_ttm_asian, 
 #                          delta_vs_strike_price_for_multiple_TTM_asian,
 #                          ])
+
+
+# TODO: choose one style between the two tables (options param, greeks table) and apply it to the other tbale
+greeks_table_asian = html.Div([ html.H4("Option Greeks (Call)", className="text-center"),
+                                        dash_table.DataTable(
+                                        id="greeks_table",
+                                        columns=[{"name": "Greek", "id": "Greek"},
+                                                 {"name": "Value", "id": "Value"}],
+                                        data=[],  # Initially empty
+                                        style_table={"overflowX": "auto",
+                                                     "border": "1px solid white"},
+                                        style_cell={
+                                            "textAlign": "center",
+                                            "padding": "10px",
+                                            "backgroundColor": "#222222",  # Dark cell background
+                                            "color": "white",  # Light text
+                                            "fontFamily": "Arial",
+                                            "border": "1px solid white"
+                                        },
+                                        style_header={
+                                            "backgroundColor": "#303030",  # Darker header background
+                                            "fontWeight": "bold",
+                                            "color": "white",
+                                            "border": "1px solid white"
+                                        },
+                                    )])
 
 delta_asian_values = html.Div([html.Label("Delta Call Asian:"), 
                                html.P(id = 'delta-call-asian'),
@@ -206,8 +305,11 @@ div_greeks_asian_accordion = dbc.Container(
 
 
 div_asian = html.Div([html.H4('Asian', style = {'margin' : '20px'}),
-                      dbc.Row([dbc.Col(plot_first_n_simulations_asian, width=9),
-                                dbc.Col(input_option_params, width=3)]),
+                      dbc.Row([dbc.Col(plot_first_n_simulations_asian, width=8),
+                               dbc.Col([dbc.Row([dbc.Col(input_option_params),
+                                                dbc.Col(greeks_table_asian),]),
+                                        dbc.Row(option_pricing_table)])
+                               ]),
                       dbc.Row([div_greeks_asian_accordion,
                                # div_greeks_asian
                                ])],
@@ -329,6 +431,62 @@ def show_delta_values_asian(menu_bar_value, n_clicks, S0, K, T, r, sigma):
     else: 
         # return empty values
         return html.Div(''), html.Div('')
+
+# Callback to compute Greeks
+@app.callback(
+    Output("greeks_table", "data"),
+    Input("button_update_params", "n_clicks"),
+    [
+        Input("input_S0", "value"),
+        Input("input_K", "value"),
+        Input("input_T", "value"),
+        Input("input_sigma", "value"),
+        Input("input_r", "value"),
+    ]
+)
+def update_greeks(n_clicks, S0, K, T, sigma, r):
+    if n_clicks == 0:
+        # Return empty values for the initial state
+        return [
+            {"Greek": "Delta", "Value (Call)": "", "Definition": "Sensitivity to underlying price", "Impact": "Positive (Call)", "Unit": "Ratio (0 to 1)"},
+            {"Greek": "Gamma", "Value (Call)": "", "Definition": "Rate of change of Delta", "Impact": "Neutral", "Unit": "Ratio"},
+            {"Greek": "Theta", "Value (Call)": "", "Definition": "Sensitivity to time decay", "Impact": "Negative", "Unit": "Per day"},
+            {"Greek": "Vega", "Value (Call)": "", "Definition": "Sensitivity to volatility", "Impact": "Positive", "Unit": "Per 1% change"},
+            {"Greek": "Rho", "Value (Call)": "", "Definition": "Sensitivity to interest rate", "Impact": "Positive", "Unit": "Per 1% change"},
+        ]
+
+    # Example computations (replace with actual formulas)
+    delta = 0.65  # Placeholder for computed Delta
+    gamma = 0.04  # Placeholder for computed Gamma
+    theta = -0.02  # Placeholder for computed Theta
+    vega = 0.10  # Placeholder for computed Vega
+    rho = 0.03  # Placeholder for computed Rho
+
+    # Updated data for the table
+    updated_data = [
+        {"Greek": "Delta", "Value (Call)": delta, "Definition": "Sensitivity to underlying price", "Impact": "Positive (Call)", "Unit": "Ratio (0 to 1)"},
+        {"Greek": "Gamma", "Value (Call)": gamma, "Definition": "Rate of change of Delta", "Impact": "Neutral", "Unit": "Ratio"},
+        {"Greek": "Theta", "Value (Call)": theta, "Definition": "Sensitivity to time decay", "Impact": "Negative", "Unit": "Per day"},
+        {"Greek": "Vega", "Value (Call)": vega, "Definition": "Sensitivity to volatility", "Impact": "Positive", "Unit": "Per 1% change"},
+        {"Greek": "Rho", "Value (Call)": rho, "Definition": "Sensitivity to interest rate", "Impact": "Positive", "Unit": "Per 1% change"},
+    ]
+    return updated_data
+
+
+@app.callback(
+    [Output("price_call", "children"),
+     Output("price_put", "children")],
+    [Input("input_S0", "value"),
+     Input("input_K", "value"),
+     Input("input_T", "value"),
+     Input("input_sigma", "value"),
+     Input("input_r", "value")],
+)
+def update_prices(S0, K, T, sigma, r):
+    # Example calculations (replace with actual formulas)
+    price_call = f"${S0 + K:.2f}"  # Placeholder calculation
+    price_put = f"${S0 - K:.2f}"   # Placeholder calculation
+    return price_call, price_put
 
 
 @app.callback(
