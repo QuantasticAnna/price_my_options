@@ -7,6 +7,7 @@ import pandas as pd
 import dash_mantine_components as dmc
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
+from flask_caching import Cache
 import numpy as np
 from datetime import datetime 
 from pricer.monte_carlo import monte_carlo_simulations, plotter_first_n_simulations
@@ -14,7 +15,8 @@ from pricer.asian import plotter_asian, pricer_asian
 from pricer.lookback import plotter_lookback
 from custom_templates import cyborg_template
 from dash import dash_table
-from greeks.delta import compute_delta, delta_vs_stock_price, plot_delta_vs_stock_price, delta_vs_strike_price_for_multiple_volatility
+from greeks.delta import compute_delta, delta_vs_stock_price, plot_delta_vs_stock_price, delta_vs_strike_price_for_multiple_volatility, delta_vs_strike_price_for_multiple_ttm
+from constants import VOLATILITY_ARRAY, TTM_ARRAY, H, K_RANGE, S0_RANGE, EXOTIC_TYPE
 
 # All stuff relative to Z recomputation are signaled by #ZRECOMPUTE (to do control F easily)
 # Uncomment when we start working on giving the user the option to recompute Z, for now, its too slow, 
@@ -24,14 +26,17 @@ from greeks.delta import compute_delta, delta_vs_stock_price, plot_delta_vs_stoc
 # Load precomputed Z
 Z_precomputed = joblib.load("Z_precomputed.joblib")
 
-# Predefined volatilities and TTM arrays  # MAKE IT IN A MORE PROPER WAY , constant file? 
-# volatility_array = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])  # Annualized volatilities
-volatility_array = np.array([0.1, 0.2])  # Less values bc too slow
-# ttm_array = np.array([0.0198, 0.0992, 0.3968, 1.0])  # Time to maturity in years (5 days, 25 days, 100 days, 1 year)
-ttm_array = np.array([0.0198, 0.0992])   # Less values bc too slow
 
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY])
+
+server = app.server
+
+# Configure Flask Cache
+cache = Cache(server, config={
+    "CACHE_TYPE": "SimpleCache",  # Use a simple in-memory cache
+    "CACHE_DEFAULT_TIMEOUT": 300  # Cache timeout in seconds
+})
 
 app.title = "Price My Options"
 
@@ -153,34 +158,46 @@ figure_delta_call_vs_stock_price_asian = dcc.Graph(id="plot_delta_call_vs_stock_
 
 slider_ttm_asian = html.Div([html.Label("Time to Maturity (Years):"),
                                         dcc.Slider(
-                                            id="slider-ttm",
-                                            min=0,
-                                            max=len(ttm_array) - 1,
-                                            step=1,
-                                            marks={i: f"{ttm_array[i]}y" for i in range(len(ttm_array))},
-                                            value=3  # Default index corresponding to 1 year
+                                            id="slider-ttm-asian",
+                                            min=TTM_ARRAY.min(),
+                                            max=TTM_ARRAY.max(),
+                                            step=None,
+                                            marks={value: f"{value:.4f}" for value in TTM_ARRAY},  # Use values as keys
+                                            value=TTM_ARRAY.max()  # Default index corresponding to 1 year
                                         )])
 
 slider_volatilities_asian = html.Div([html.Label("Volatility (%):"),
                                     dcc.Slider(
                                         id="slider-volatility-asian",
-                                        min=0.1,
-                                        max=0.6,
+                                        min=VOLATILITY_ARRAY.min(), #0.1,
+                                        max=VOLATILITY_ARRAY.max(), #0.6,
                                         step=None,
-                                        marks={i: f"{volatility_array[i]}" for i in range(len(volatility_array))},
-                                        value=0.2,  # Default value
+                                        marks = {value: f"{value:.1f}" for value in VOLATILITY_ARRAY},
+                                        # marks={i: f"{VOLATILITY_ARRAY[i]}" for i in range(len(VOLATILITY_ARRAY))},
+                                        value=VOLATILITY_ARRAY.max(), #0.2,  # Default value
                                     )])
 
-div_delta_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Delta', className="text-center")),
-                            dbc.CardBody([delta_asian_values,
-                                    dbc.Row([dbc.Col([html.P('Title to align all plots'), # placholder title
-                                                      figure_delta_call_vs_stock_price_asian], width=4),
-                                             dbc.Col([slider_volatilities_asian,
-                                                      dcc.Store(id="detla-vs-strike-different-vol-store"),
-                                                      dcc.Graph(id = 'plot-detla-vs-strike-different-vol')], width=4),  #placeholder figures
-                                             dbc.Col([slider_ttm_asian,
-                                                      dcc.Graph(figure=go.Figure(), id = 'plot-detla-vs-strike-different-ttm')], width=4)]),]), #placeholder figures
-                                    ], style = {'margin-bottom': '20px'})
+# div_delta_asian_card = dbc.Card([dbc.CardHeader(html.H5('Asian Delta', className="text-center")),
+#                             dbc.CardBody([delta_asian_values,
+#                                     dbc.Row([dbc.Col([figure_delta_call_vs_stock_price_asian], width=4),
+#                                              dbc.Col([dcc.Store(id="delta-vs-strike-different-vol-store"),
+#                                                       dcc.Graph(id = 'plot-delta-vs-strike-different-vol'),
+#                                                       slider_volatilities_asian,], width=4),  #placeholder figures
+#                                              dbc.Col([slider_ttm_asian,
+#                                                       dcc.Graph(figure=go.Figure(), id = 'plot-delta-vs-strike-different-ttm')], width=4)]),]), #placeholder figures
+#                                     ], style = {'margin-bottom': '20px'})
+
+div_delta_asian = html.Div([html.H5('Asian Delta', className="text-center"),
+                            delta_asian_values,
+                            dbc.Row([dbc.Col([figure_delta_call_vs_stock_price_asian], width=4),
+                                        dbc.Col([dcc.Store(id="delta-vs-strike-different-vol-store"),
+                                                dcc.Graph(id = 'plot-delta-vs-strike-different-vol'),
+                                                slider_volatilities_asian], width=4),  #placeholder figures
+                                        dbc.Col([dcc.Store(id="delta-vs-strike-different-ttm-store"),
+                                                 dcc.Graph(id = 'plot-delta-vs-strike-different-ttm'),
+                                                 slider_ttm_asian,], width=4)]),]#placeholder figures
+                                    , style = {'margin-bottom': '20px'})
+
 
 div_gamma_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Gamma', className="text-center")),
                             dbc.CardBody([html.P('Values'),
@@ -344,7 +361,12 @@ def show_plot_first_n_simulations(n_clicks, S0, K, T, r, sigma): #! Maybe instea
         return fig_asian, fig_lookback
     # return go.Figure(), go.Figure(), go.Figure() # empty figures
     empty_fig = go.Figure()
-    empty_fig.update_layout(template=cyborg_template)
+    empty_fig.update_layout(
+        title=f"First Monte Carlo Simulations of Stock Prices, with avg",
+        xaxis_title="Time Steps",
+        yaxis_title="Stock Price",
+        template=cyborg_template
+    )
     return empty_fig, empty_fig # empty figures
 
 @app.callback(
@@ -358,8 +380,8 @@ def show_plot_first_n_simulations(n_clicks, S0, K, T, r, sigma): #! Maybe instea
     State("input_r", "value"),
     State("input_sigma", "value"))
 def show_delta_values_asian(menu_bar_value, n_clicks, S0, K, T, r, sigma):
-    h = 0.01
-    exotic_type = 'asian' # later will be value of menu bar 
+    h = H
+    exotic_type = EXOTIC_TYPE # later will be value of menu bar 
 
     if n_clicks > 0 and Z_precomputed is not None:
         deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic_type) # for asian, no kwargs
@@ -421,102 +443,37 @@ def update_prices(n_clicks, S0, K, T, sigma, r):
     State("input_r", "value"),
     State("input_sigma", "value"))
 def show_delta_plots_vs_stock_price(menu_bar_value, n_clicks, S0, K, T, r, sigma):
-    h = 0.01
-    S0_range = np.linspace(50, 150, 20)  # Shoule be flexible depending on input parameters
-    exotic_type = 'asian' # later will be value of menu bar 
+    h = H
+    S0_range = S0_RANGE  
+    exotic_type = EXOTIC_TYPE # later will be value of menu bar 
 
     if n_clicks > 0 and Z_precomputed is not None:
 
-        #fig  = plot_delta_vs_stock_price(Z_precomputed, S0_range, K, T, r, sigma, h, exotic_type)# for asian, no kwargs
-        #return fig
-        return go.Figure()
-    
+        fig  = plot_delta_vs_stock_price(Z_precomputed, S0_range, K, T, r, sigma, h, exotic_type)# for asian, no kwargs
+        return fig
+
     else: 
         empty_fig = go.Figure()
-        empty_fig.update_layout(template=cyborg_template)
+        empty_fig.update_layout(
+            title="Delta vs Stock Price",
+            xaxis_title="Stock Price (S)",
+            yaxis_title="Delta",
+            legend=dict(
+                title="Option Type",
+                orientation="h",
+                y=-0.2,
+                x=0.5,
+                xanchor="center"
+            ),
+            margin=dict(l=50, r=50, t=50, b=50),
+            template=cyborg_template
+    )
         return empty_fig
     
 
-# @app.callback(
-#     Output('plot-detla-vs-strike-different-vol', 'figure'),
-#     [Input("button_update_params", "n_clicks"),
-#      Input('slider-volatility-asian', 'value'),],
-#     [State("input_S0", "value"),
-#     State("input_T", "value"),
-#     State("input_r", "value"),
-#     State("slider-volatility-asian", "marks"),  # All possible volatilities
-#     ]
-# )
-# def show_delta_plots_vs_strike_diff_vol(n_clicks, selected_volatility, S0, T, r, volatility_marks):
-
-#     print(selected_volatility)
-
-#     h = 0.01
-#     K_range = np.linspace(50, 150, 10)  # Should be flexible depending on input parameters
-#     exotic_type = 'asian'  # For now, hardcoded to 'asian'
-
-#     if n_clicks > 0 and Z_precomputed is not None:
-
-#         # Convert `volatility_marks` to an np.ndarray of numerical values
-#         volatilities = np.array([float(v) for v in volatility_marks.values()])
-
-#         # Compute deltas for all volatilities
-#         dict_delta_call, dict_delta_put = delta_vs_strike_price_for_multiple_volatility(
-#             Z_precomputed, S0, volatilities, K_range, T, r, h, exotic_type
-#         )
-
-#         # Extract the deltas for the selected volatility
-#         delta_call = dict_delta_call[selected_volatility]
-#         delta_put = dict_delta_put[selected_volatility]
-
-#         # Plot the results
-#         fig = go.Figure()
-
-#         # Plot call deltas
-#         fig.add_trace(go.Scatter(
-#             x=K_range,
-#             y=delta_call,
-#             mode='lines+markers',
-#             name="Call Delta",
-#             line=dict(color='blue')
-#         ))
-
-#         # Plot put deltas
-#         fig.add_trace(go.Scatter(
-#             x=K_range,
-#             y=delta_put,
-#             mode='lines+markers',
-#             name="Put Delta",
-#             line=dict(color='red')
-#         ))
-
-#         # Style the plot
-#         fig.update_layout(
-#             title="Delta vs Strike Price",
-#             xaxis_title="Strike Price (K)",
-#             yaxis_title="Delta",
-#             legend=dict(
-#                 title="Option Type",
-#                 orientation="h",
-#                 y=-0.2,  # Moves the legend closer to the plot
-#                 x=0.5,
-#                 xanchor="center"
-#             ),
-#             margin=dict(l=50, r=50, t=50, b=50),
-#             template="plotly_dark"
-#         )
-
-#         return fig
-
-#     # Return an empty figure if conditions are not met
-#     empty_fig = go.Figure()
-#     empty_fig.update_layout(template=cyborg_template)
-#     return go.Figure()
-
-
 
 @app.callback(
-    Output("detla-vs-strike-different-vol-store", "data"),
+    Output("delta-vs-strike-different-vol-store", "data"),
     Input("button_update_params", "n_clicks"),
     [
         State("input_S0", "value"),
@@ -527,9 +484,9 @@ def show_delta_plots_vs_stock_price(menu_bar_value, n_clicks, S0, K, T, r, sigma
 )
 def compute_deltas_vs_strike_for_diff_vol(n_clicks, S0, T, r, volatility_marks):
     if n_clicks > 0 and Z_precomputed is not None:
-        h = 0.01
-        K_range = np.linspace(50, 150, 10)  # Adjust as needed
-        exotic_type = 'asian'  # For now, hardcoded to 'asian'
+        h = H
+        K_range = K_RANGE
+        exotic_type = EXOTIC_TYPE 
 
         # Convert `volatility_marks` to an np.ndarray of numerical values
         volatilities = np.array([float(v) for v in volatility_marks.values()])
@@ -550,10 +507,10 @@ def compute_deltas_vs_strike_for_diff_vol(n_clicks, S0, T, r, volatility_marks):
 
 
 @app.callback(
-    Output("plot-detla-vs-strike-different-vol", "figure"),
+    Output("plot-delta-vs-strike-different-vol", "figure"),
     [
         Input("slider-volatility-asian", "value"),
-        Input("detla-vs-strike-different-vol-store", "data"),
+        Input("delta-vs-strike-different-vol-store", "data"),
     ]
 )
 def show_delta_plots_vs_strike_diff_vol(selected_volatility, stored_data):
@@ -564,10 +521,6 @@ def show_delta_plots_vs_strike_diff_vol(selected_volatility, stored_data):
         dict_delta_put = stored_data["dict_delta_put"]
 
         selected_volatility_str = str(selected_volatility)
-
-        print(dict_delta_call)
-        print(selected_volatility)
-        print(selected_volatility_str)
 
         # Extract the deltas for the selected volatility
         delta_call = dict_delta_call[selected_volatility_str]
@@ -582,7 +535,7 @@ def show_delta_plots_vs_strike_diff_vol(selected_volatility, stored_data):
             y=delta_call,
             mode='lines+markers',
             name="Call Delta",
-            line=dict(color='blue')
+            #line=dict(color='blue')
         ))
 
         # Plot put deltas
@@ -591,12 +544,12 @@ def show_delta_plots_vs_strike_diff_vol(selected_volatility, stored_data):
             y=delta_put,
             mode='lines+markers',
             name="Put Delta",
-            line=dict(color='red')
+            #line=dict(color='red')
         ))
 
         # Style the plot
         fig.update_layout(
-            title="Delta vs Strike Price",
+            title="Delta vs Strike Price for Different Vol",
             xaxis_title="Strike Price (K)",
             yaxis_title="Delta",
             legend=dict(
@@ -607,13 +560,143 @@ def show_delta_plots_vs_strike_diff_vol(selected_volatility, stored_data):
                 xanchor="center"
             ),
             margin=dict(l=50, r=50, t=50, b=50),
-            template="plotly_dark"
+            template=cyborg_template
         )
 
         return fig
 
     # Return an empty figure if no data is available
-    return go.Figure()
+    empty_fig = go.Figure()
+        # Style the plot
+    empty_fig.update_layout(
+        title="Delta vs Strike Price for Different Vol",
+        xaxis_title="Strike Price (K)",
+        yaxis_title="Delta",
+        legend=dict(
+            title="Option Type",
+            orientation="h",
+            y=-0.2,
+            x=0.5,
+            xanchor="center"
+        ),
+        margin=dict(l=50, r=50, t=50, b=50),
+        template=cyborg_template
+    )
+    return empty_fig
+
+
+@app.callback(
+    Output("delta-vs-strike-different-ttm-store", "data"),
+    Input("button_update_params", "n_clicks"),
+    [
+        State("input_S0", "value"),
+        State("input_T", "value"),
+        State("input_sigma", "value"),
+        State("input_r", "value"),
+        State("slider-ttm-asian", "marks"),
+    ]
+)
+def compute_deltas_vs_strike_for_diff_ttm(n_clicks, S0, T, sigma, r, ttm_marks):
+    if n_clicks > 0 and Z_precomputed is not None:
+        h = H
+        K_range = K_RANGE
+        exotic_type = EXOTIC_TYPE 
+
+        # Convert `volatility_marks` to an np.ndarray of numerical values
+        ttm_array = np.array([float(v) for v in ttm_marks.keys()])
+
+        # Compute deltas for all volatilities
+        dict_delta_call, dict_delta_put = delta_vs_strike_price_for_multiple_ttm(
+            Z_precomputed, S0, sigma, K_range, ttm_array, r, h, exotic_type
+        )
+
+        # Return the data to be stored in `dcc.Store`
+        return { 'K_range': K_range.tolist(),            
+                "dict_delta_call": dict_delta_call,
+                "dict_delta_put": dict_delta_put
+        }
+
+    # Return an empty dictionary if conditions are not met
+    return {}
+
+
+@app.callback(
+    Output("plot-delta-vs-strike-different-ttm", "figure"),
+    [
+        Input("slider-ttm-asian", "value"),
+        Input("delta-vs-strike-different-ttm-store", "data"),
+    ]
+)
+def show_delta_plots_vs_strike_diff_ttm(selected_ttm, stored_data):
+    if stored_data and selected_ttm is not None:
+        # Extract data from the store
+        K_range = np.array(stored_data["K_range"])
+        dict_delta_call = stored_data["dict_delta_call"]
+        dict_delta_put = stored_data["dict_delta_put"]
+
+        selected_ttm_str = str(selected_ttm)
+
+        # Extract the deltas for the selected volatility
+        delta_call = dict_delta_call[selected_ttm_str]
+        delta_put = dict_delta_put[selected_ttm_str]
+
+        # Plot the results
+        fig = go.Figure()
+
+        # Plot call deltas
+        fig.add_trace(go.Scatter(
+            x=K_range,
+            y=delta_call,
+            mode='lines+markers',
+            name="Call Delta",
+            #line=dict(color='blue')
+        ))
+
+        # Plot put deltas
+        fig.add_trace(go.Scatter(
+            x=K_range,
+            y=delta_put,
+            mode='lines+markers',
+            name="Put Delta",
+            #line=dict(color='red')
+        ))
+
+        # Style the plot
+        fig.update_layout(
+            title="Delta vs Strike Price for Different TTM",
+            xaxis_title="Strike Price (K)",
+            yaxis_title="Delta",
+            legend=dict(
+                title="Option Type",
+                orientation="h",
+                y=-0.2,
+                x=0.5,
+                xanchor="center"
+            ),
+            margin=dict(l=50, r=50, t=50, b=50),
+            template=cyborg_template
+        )
+
+        return fig
+
+    # Return an empty figure if no data is available
+    empty_fig = go.Figure()
+    empty_fig.update_layout(
+        title="Delta vs Strike Price for Different TTM",
+        xaxis_title="Strike Price (K)",
+        yaxis_title="Delta",
+        legend=dict(
+            title="Option Type",
+            orientation="h",
+            y=-0.2,
+            x=0.5,
+            xanchor="center"
+        ),
+        margin=dict(l=50, r=50, t=50, b=50),
+        template=cyborg_template
+    )
+    return empty_fig
+
 
 
 # Run the Dash app

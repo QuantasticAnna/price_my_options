@@ -2,7 +2,7 @@ import numpy as np
 from pricer.asian import pricer_asian
 from pricer.monte_carlo import monte_carlo_simulations
 import matplotlib.pyplot as plt
-from config import pricer_mapping
+from constants import pricer_mapping
 
 # TODO: 
     # compute_theta

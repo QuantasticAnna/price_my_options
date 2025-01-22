@@ -3,7 +3,7 @@ from pricer.asian import pricer_asian
 from pricer.monte_carlo import plotter_first_n_simulations, monte_carlo_simulations
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-from config import pricer_mapping
+from constants import pricer_mapping
 from plotly.graph_objects import Surface
 from custom_templates import cyborg_template
 
@@ -214,8 +214,8 @@ def plot_delta_vs_stock_price(Z: np.ndarray,
 
     # Update layout
     fig.update_layout(
-        title="Delta vs Strike Price",
-        xaxis_title="Strike Price (K)",
+        title="Delta vs Stock Price",
+        xaxis_title="Stock Price (K)",
         yaxis_title="Delta",
         legend=dict(
             title="Option Type",
@@ -402,7 +402,7 @@ def plot_3d_delta_vs_strike_price_for_multiple_volatility(results: dict, option_
     fig.show()
 
 
-def delta_vs_strike_price_for_multiple_TTM(Z: np.ndarray, 
+def delta_vs_strike_price_for_multiple_ttm(Z: np.ndarray, 
                                                  S0: float, 
                                                  sigma: float, 
                                                  K_range: np.ndarray, 
@@ -434,24 +434,21 @@ def delta_vs_strike_price_for_multiple_TTM(Z: np.ndarray,
               - 'delta_matrix_call': 2D array of Call Deltas
               - 'delta_matrix_put': 2D array of Put Deltas
     """
-    delta_matrix_call = []
-    delta_matrix_put = []
 
 
+    dict_delta_call = {}
+    dict_delta_put = {}
 
     # Iterate over volatilities
     for TTM in TTM_array:
         # Compute Delta for each volatility
         results = delta_vs_strike_price(Z, S0, K_range, TTM, r, sigma, h, exotic_type, n_simulations, **kwargs)
-        delta_matrix_call.append(results['delta_call'])
-        delta_matrix_put.append(results['delta_put'])
 
-    return {
-        'strike_price': K_range,
-        'TTM': TTM_array,
-        'delta_matrix_call': np.array(delta_matrix_call),
-        'delta_matrix_put': np.array(delta_matrix_put)
-    }
+        dict_delta_call[TTM] = results['delta_call']
+        dict_delta_put[TTM] = results['delta_put']
+
+    return dict_delta_call, dict_delta_put
+
 
 
 
