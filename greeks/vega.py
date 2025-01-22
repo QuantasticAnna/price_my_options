@@ -63,21 +63,13 @@ def compute_vega(Z: np.ndarray,
     # Extract prices for call options
     # We use the price of the call, then we do not differenciate anymore between call and put, 
         # because vega call = vegga put
-    price_call_S = prices_S['price_call']
-    price_call_S_sigma_h = prices_S_sigma_h['price_call']
+    price_S = prices_S['price_call']
+    price_S_sigma_h = prices_S_sigma_h['price_call']
 
     # Compute Vega for call options
-    vega_call = (price_call_S_sigma_h - price_call_S) / h
+    vega = (price_S_sigma_h - price_S) / h
 
-    # Extract prices for put options
-    price_put_S = prices_S['price_put']
-    price_put_S_sigma_h = prices_S_sigma_h['price_put']
-
-    # Compute Vega for put options
-    vega_put = (price_put_S_sigma_h - price_put_S) / h
-
-    return {'vega_call': vega_call,
-            'vega_put': vega_put}
+    return {'vega': vega}
 
 def vega_vs_stock_price(Z: np.ndarray, 
                          S0_range: np.ndarray, 
@@ -108,19 +100,17 @@ def vega_vs_stock_price(Z: np.ndarray,
         dict: Vegas for calls and puts over the stock price range:
               {'stock_price': S0_range, 'vega_call': vega_call_list, 'vega_put': vega_put_list}.
     """
-    vega_call_list = []
-    vega_put_list = []
+
+    vega_list = []
 
     for S0 in S0_range:
         # Compute Vega for each stock price
         vegas = compute_vega(Z, S0, K, T, r, sigma, h, exotic_type, n_simulations=n_simulations, **kwargs)
-        vega_call_list.append(vegas['vega_call'])
-        vega_put_list.append(vegas['vega_put'])
+        vega_list.append(vegas['vega'])
 
     return {
         'stock_price': S0_range,
-        'vega_call': vega_call_list,
-        'vega_put': vega_put_list
+        'vega': vega_list
     }
 
 # def theta_vs_strike_price()
@@ -157,20 +147,12 @@ def plot_vega_vs_stock_price(Z: np.ndarray,
     # Create the figure
     fig = go.Figure()
 
-    # Add trace for Call Vega
+    # Add trace for Vega
     fig.add_trace(go.Scatter(
         x=results['stock_price'],
-        y=results['vega_call'],
+        y=results['vega'],
         mode='lines+markers',
-        name='Call Vega'
-    ))
-
-    # Add trace for Put Vega
-    fig.add_trace(go.Scatter(
-        x=results['stock_price'],
-        y=results['vega_put'],
-        mode='lines+markers',
-        name='Put Vega'
+        name='Vega'
     ))
 
     # Add horizontal line at y=0
@@ -187,14 +169,6 @@ def plot_vega_vs_stock_price(Z: np.ndarray,
         title="Vega vs Stock Price",
         xaxis_title="Stock Price (S0)",
         yaxis_title="Vega",
-        legend=dict(
-            title="Option Type",
-            x=0.5,  # Center horizontally
-            y=-0.3,  # Place below the graph
-            xanchor="center",  # Anchor legend at its center horizontally
-            yanchor="top",  # Anchor legend to the top of its box
-            orientation="h"  # Horizontal legend layout
-        ),
         margin=dict(
         l=20,  # Left margin
         r=20,  # Right margin
