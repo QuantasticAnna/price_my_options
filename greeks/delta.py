@@ -215,7 +215,7 @@ def plot_delta_vs_stock_price(Z: np.ndarray,
     # Update layout
     fig.update_layout(
         title="Delta vs Stock Price",
-        xaxis_title="Stock Price (K)",
+        xaxis_title="Stock Price (S0)",
         yaxis_title="Delta",
         legend=dict(
             title="Option Type",

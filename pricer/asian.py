@@ -67,13 +67,13 @@ def plotter_asian(S: np.ndarray,
 
         # Marker for the maximum price
 
-    # Layout settings
-    fig.update_layout(
-        title=f"First {n_sim_to_plot} Monte Carlo Simulations of Stock Prices",
-        xaxis_title="Time Steps",
-        yaxis_title="Stock Price",
-        template="plotly_white"
-    )
+    # # Layout settings
+    # fig.update_layout(
+    #     title=f"First {n_sim_to_plot} Monte Carlo Simulations of Stock Prices",
+    #     xaxis_title="Time Steps",
+    #     yaxis_title="Stock Price",
+    #     template="plotly_white"
+    # )
 
     # Access the colors used in the base plot
     colors = [trace.line.color for trace in fig.data if trace.mode == 'lines']

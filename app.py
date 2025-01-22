@@ -16,7 +16,9 @@ from pricer.lookback import plotter_lookback
 from custom_templates import cyborg_template
 from dash import dash_table
 from greeks.delta import compute_delta, delta_vs_stock_price, plot_delta_vs_stock_price, delta_vs_strike_price_for_multiple_volatility, delta_vs_strike_price_for_multiple_ttm
-from constants import VOLATILITY_ARRAY, TTM_ARRAY, H, K_RANGE, S0_RANGE, EXOTIC_TYPE
+from greeks.theta import plot_theta_vs_stock_price
+from greeks.vega import plot_vega_vs_stock_price
+from constants import VOLATILITY_ARRAY, TTM_ARRAY, H, K_RANGE, S0_RANGE, EXOTIC_TYPE, TTM_ARRAY_VEGA, VOLATILITY_ARRAY_VEGA
 
 # All stuff relative to Z recomputation are signaled by #ZRECOMPUTE (to do control F easily)
 # Uncomment when we start working on giving the user the option to recompute Z, for now, its too slow, 
@@ -28,7 +30,7 @@ Z_precomputed = joblib.load("Z_precomputed.joblib")
 
 
 # Initialize the Dash app
-app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY])
+app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css"], )
 
 server = app.server
 
@@ -154,7 +156,9 @@ delta_asian_values = html.Div([html.Label("Delta Call Asian:"),
                                html.Label("Delta Put Asian:"), 
                                html.P(id = 'delta-put-asian')])
 
-figure_delta_call_vs_stock_price_asian = dcc.Graph(id="plot_delta_call_vs_stock_price_asian", style={"height": "500px"})
+button_compute_delta = html.Div(html.Button("Compute Delta (unsused for now, to connect)", id="button_compute_delta", n_clicks=0, className="btn btn-primary mt-3"),
+                                style={"textAlign": "center"},
+                            )
 
 slider_ttm_asian = html.Div([html.Label("Time to Maturity (Years):"),
                                         dcc.Slider(
@@ -188,8 +192,10 @@ slider_volatilities_asian = html.Div([html.Label("Volatility (%):"),
 #                                     ], style = {'margin-bottom': '20px'})
 
 div_delta_asian = html.Div([html.H5('Asian Delta', className="text-center"),
+                            html.P('Note: plots vega vs stock, vega vs strike for different ttm, vega vs ttm, (is vega vs strike for different vol interesting?)'),
+                            button_compute_delta,
                             delta_asian_values,
-                            dbc.Row([dbc.Col([figure_delta_call_vs_stock_price_asian], width=4),
+                            dbc.Row([dbc.Col([dcc.Graph(id="plot_delta_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
                                         dbc.Col([dcc.Store(id="delta-vs-strike-different-vol-store"),
                                                 dcc.Graph(id = 'plot-delta-vs-strike-different-vol'),
                                                 slider_volatilities_asian], width=4),  #placeholder figures
@@ -205,17 +211,72 @@ div_gamma_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Gamma', className="tex
                                             html.P('Plot2')],),
                                     ], style = {'margin-bottom': '20px'})
 
-div_vega_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Vega', className="text-center")),
-                            dbc.CardBody([html.P('Values'),
-                                            html.P('Plot1'),
-                                            html.P('Plot2')],),
-                                    ], style = {'margin-bottom': '20px'})
+
+button_compute_vega = html.Div(html.Button("Compute Vega", id="button_compute_vega", n_clicks=0, className="btn btn-primary mt-3"),
+                                style={"textAlign": "center"},
+                            )
+
+slider_ttm_asian_vega = html.Div([html.Label("Time to Maturity (Years):"),
+                                        dcc.Slider(
+                                            id="slider-ttm-asian-vega",
+                                            min=TTM_ARRAY_VEGA.min(),
+                                            max=TTM_ARRAY_VEGA.max(),
+                                            step=None,
+                                            marks={value: f"{value:.4f}" for value in TTM_ARRAY_VEGA},  # Use values as keys
+                                            value=TTM_ARRAY_VEGA.max()  # Default index corresponding to 1 year
+                                        )])
+
+slider_volatilities_asian_vega = html.Div([html.Label("Volatility (%):"),
+                                    dcc.Slider(
+                                        id="slider-volatility-asian-vega",
+                                        min=VOLATILITY_ARRAY_VEGA.min(), #0.1,
+                                        max=VOLATILITY_ARRAY_VEGA.max(), #0.6,
+                                        step=None,
+                                        marks = {value: f"{value:.1f}" for value in VOLATILITY_ARRAY_VEGA},
+                                        value=VOLATILITY_ARRAY_VEGA.max(), #0.2,  # Default value
+                                    )])
+
+
+div_vega_asian = html.Div([html.H5('Asian Vega', className="text-center"),
+                           button_compute_vega,
+                            # vega_asian_values, #TO CREATE
+                            dbc.Row([dbc.Col([dcc.Graph(id="plot_vega_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
+                                        dbc.Col([dcc.Store(id="vega-vs-strike-different-vol-store"), 
+                                                dcc.Graph(id = 'plot-vega-vs-strike-different-vol'),
+                                                slider_volatilities_asian_vega], width=4),  # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
+                                        dbc.Col([dcc.Store(id="vega-vs-strike-different-ttm-store"),
+                                                 dcc.Graph(id = 'plot-vega-vs-strike-different-ttm'),
+                                                 slider_ttm_asian_vega,], width=4)]),] # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
+                                    # TODO: Also add plot where axis is time left to expiration 
+                                    , style = {'margin-bottom': '20px'})
+
 
 div_theta_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Theta', className="text-center")),
                             dbc.CardBody([html.P('Values'),
                                             html.P('Plot1'),
                                             html.P('Plot2')],),
                                     ], style = {'margin-bottom': '20px'})
+
+
+button_compute_theta = html.Div(html.Button("Compute Theta", id="button_compute_theta", n_clicks=0, className="btn btn-primary mt-3"),
+                                style={"textAlign": "center"},
+                            )
+
+div_theta_asian = html.Div([html.H5('Asian Theta', className="text-center"),
+                           button_compute_theta,
+                            # theta_asian_values, #TO CREATE
+                            dbc.Row([dbc.Col([dcc.Graph(id="plot_theta_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
+                                        dbc.Col([dcc.Store(id="theta-vs-strike-different-vol-store"), 
+                                                dcc.Graph(id = 'plot-theta-vs-strike-different-vol'),
+                                                #slider_volatilities_asian_theta
+                                                ], width=4),  # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
+                                        dbc.Col([dcc.Store(id="thetaa-vs-strike-different-ttm-store"),
+                                                 dcc.Graph(id = 'plot-theta-vs-strike-different-ttm'),
+                                                 # slider_ttm_asian_theta,
+                                                 ], width=4)]),] # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
+                                    # TODO: Also add plot where axis is time left to expiration 
+                                    , style = {'margin-bottom': '20px'})
+
 
 div_rho_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Rho', className="text-center")),
                             dbc.CardBody([html.P('Values'),
@@ -276,7 +337,32 @@ div_lookback = html.Div([html.H4('Lookback', style = {'margin' : '20px'}),
 div3 = html.Div([html.H4('Div 3', style = {'margin' : '20px'})],
                 id = 'div3')
 
+info_and_tooltip_first_test = html.Div(
+    [
+        # Info icon
+        html.I(
+            className="bi bi-info-circle",  # Bootstrap Info Circle Icon
+            id="info-icon",  # ID for linking the tooltip
+            style={
+                "fontSize": "40px",  # Increase font size
+                "cursor": "pointer",  # Add pointer cursor
+                "color": "#375a7f"  # Add a color (e.g., Bootstrap primary blue)
+            }
+        ),
+
+        # Tooltip for the info icon
+        dbc.Tooltip(
+            "This is the information you want to display when hovering.",
+            target="info-icon",  # Links the tooltip to the icon
+            placement="right",  # Position of the tooltip
+        )
+    ],
+    style={"padding": "50px"}  # Add padding for better visibility
+)
+
+
 app.layout = html.Div([html.H1('Price My Options'),
+                       info_and_tooltip_first_test,
                         # input_option_params, # for now we focus on asian, so we put this is div asian
                        # plot_first_n_simulations,
                        menu_bar, 
@@ -386,6 +472,7 @@ def show_delta_values_asian(menu_bar_value, n_clicks, S0, K, T, r, sigma):
     if n_clicks > 0 and Z_precomputed is not None:
         deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic_type) # for asian, no kwargs
         return html.Div(f"{deltas['delta_call']*100:.2f}%"), html.Div(f"{(1 - deltas['delta_call'])*100:.2f}%")
+    # TODO: put =  1 - delta_call is valid only for vanilla ?
 
     else: 
         # return empty values
@@ -456,6 +543,82 @@ def show_delta_plots_vs_stock_price(menu_bar_value, n_clicks, S0, K, T, r, sigma
         empty_fig = go.Figure()
         empty_fig.update_layout(
             title="Delta vs Stock Price",
+            xaxis_title="Stock Price (S)",
+            yaxis_title="Delta",
+            legend=dict(
+                title="Option Type",
+                orientation="h",
+                y=-0.2,
+                x=0.5,
+                xanchor="center"
+            ),
+            margin=dict(l=50, r=50, t=50, b=50),
+            template=cyborg_template
+    )
+        return empty_fig
+    
+
+@app.callback(
+    Output('plot_theta_call_vs_stock_price_asian', 'figure'),
+     Input('menu_bar', 'value'), ## at a later stage we will the value of the menu bar? for now, hardcoded for asian
+     Input("button_compute_theta", "n_clicks"),
+    State("input_S0", "value"),
+    State("input_K", "value"),
+    State("input_T", "value"),
+    State("input_r", "value"),
+    State("input_sigma", "value"))
+def show_dtheta_plots_vs_stock_price(menu_bar_value, n_clicks, S0, K, T, r, sigma):
+    h = H
+    S0_range = S0_RANGE  
+    exotic_type = EXOTIC_TYPE # later will be value of menu bar 
+
+    if n_clicks > 0 and Z_precomputed is not None:
+
+        fig  = plot_theta_vs_stock_price(Z_precomputed, S0_range, K, T, r, sigma, h, exotic_type)# for asian, no kwargs
+        return fig
+
+    else: 
+        empty_fig = go.Figure()
+        empty_fig.update_layout(
+            title="Theta vs Stock Price",
+            xaxis_title="Stock Price (S)",
+            yaxis_title="Delta",
+            legend=dict(
+                title="Option Type",
+                orientation="h",
+                y=-0.2,
+                x=0.5,
+                xanchor="center"
+            ),
+            margin=dict(l=50, r=50, t=50, b=50),
+            template=cyborg_template
+    )
+        return empty_fig
+    
+
+@app.callback(
+    Output('plot_vega_call_vs_stock_price_asian', 'figure'),
+     Input('menu_bar', 'value'), ## at a later stage we will the value of the menu bar? for now, hardcoded for asian
+     Input("button_compute_vega", "n_clicks"),
+    State("input_S0", "value"),
+    State("input_K", "value"),
+    State("input_T", "value"),
+    State("input_r", "value"),
+    State("input_sigma", "value"))
+def show_dtheta_plots_vs_stock_price(menu_bar_value, n_clicks, S0, K, T, r, sigma):
+    h = H
+    S0_range = S0_RANGE  
+    exotic_type = EXOTIC_TYPE # later will be value of menu bar 
+
+    if n_clicks > 0 and Z_precomputed is not None:
+
+        fig  = plot_vega_vs_stock_price(Z_precomputed, S0_range, K, T, r, sigma, h, exotic_type)# for asian, no kwargs
+        return fig
+
+    else: 
+        empty_fig = go.Figure()
+        empty_fig.update_layout(
+            title="Vega vs Stock Price",
             xaxis_title="Stock Price (S)",
             yaxis_title="Delta",
             legend=dict(
@@ -702,3 +865,13 @@ def show_delta_plots_vs_strike_diff_ttm(selected_ttm, stored_data):
 # Run the Dash app
 if __name__ == "__main__":
     app.run_server(debug=True)
+
+
+## TODO: rewrite the plot functions in script delta, using what is written here 
+# Make a button compute_delta, compute_vega ...? 
+
+# For functions copmuite_delta_vs_strike_price_for_diff_ttm, we have the same for vega, theta... 
+    # maybe it would be easier to pass as an argument which greek to use, 
+    # then if greek = delta, use compute detla,....
+
+    # TODO adjust size cells options greeks table so they match otion parameters table
