@@ -241,6 +241,10 @@ def update_greeks(*args):
         for greek in GREEKS
     ],
     [
+        State(f"store_plot_{greek}_vs_stock_price_{exotic}", "data")
+        for exotic in EXOTIC_OPTION_TYPES
+        for greek in GREEKS
+    ] + [
         State(f"input_S0_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
     ] + [
         State(f"input_K_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
@@ -253,45 +257,42 @@ def update_greeks(*args):
     ],
 )
 def update_greek_vs_stock_price_plots(*args):
-    """
-    Callback to compute and update Greek plots dynamically for multiple exotic options.
-    """
     n_exotics = len(EXOTIC_OPTION_TYPES)
     n_greeks = len(GREEKS)
 
-    # Separate n_clicks and states
+    # Separate n_clicks, stored data, and states
     n_clicks = args[:n_exotics * n_greeks]
-    states = args[n_exotics * n_greeks:]
+    stored_data = args[n_exotics * n_greeks : n_exotics * n_greeks * 2]
+    states = args[n_exotics * n_greeks * 2:]
 
     # Group states by exotic type
-    n_states = len(states) // n_exotics
+    n_states_per_exotic = 5  # S0, K, T, r, sigma
     split_states = [
         states[i::n_exotics] for i in range(n_exotics)
     ]
 
-    # Initialize output plots
-    updated_plots = []
+    # Initialize updated plots with empty_fig by default
+    updated_plots = [
+        stored_data[i] if stored_data[i] is not None else empty_fig
+        for i in range(len(stored_data))
+    ]
 
-    for exotic, state_set in zip(EXOTIC_OPTION_TYPES, split_states):
+    for exotic_index, (exotic, state_set) in enumerate(zip(EXOTIC_OPTION_TYPES, split_states)):
         S0, K, T, r, sigma = state_set
 
-        # Constants for all exotic options
         h = H
         S0_range = S0_RANGE
         Z = Z_precomputed
 
-        for i, greek in enumerate(GREEKS):
-            button_index = EXOTIC_OPTION_TYPES.index(exotic) * n_greeks + i
+        for greek_index, greek in enumerate(GREEKS):
+            output_index = exotic_index * n_greeks + greek_index
             triggered_button = callback_context.triggered[0]["prop_id"].split(".")[0]
 
             if triggered_button == f"button_compute_{greek}_vs_stock_price_{exotic}" and Z is not None:
                 plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
-                updated_plots.append(plot)
-            else:
-                updated_plots.append(empty_fig)  # Empty figure if not updated
+                updated_plots[output_index] = plot
 
     return tuple(updated_plots)
-
 
 
 
@@ -312,7 +313,10 @@ def update_plots_greek_vs_stock_price_from_store(*stored_data):
     """
     Callback to render stored plots in their respective graphs.
     """
-    return tuple(stored_data)
+    # return tuple(stored_data)
+    return tuple(stored_data[i] if stored_data[i] is not None else empty_fig for i in range(len(stored_data)))
+
+
 
 
 @app.callback(
@@ -327,6 +331,10 @@ def update_plots_greek_vs_stock_price_from_store(*stored_data):
         for greek in GREEKS
     ],
     [
+        State(f"store_plot_{greek}_vs_strike_price_{exotic}", "data")
+        for exotic in EXOTIC_OPTION_TYPES
+        for greek in GREEKS
+    ] + [
         State(f"input_S0_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
     ] + [
         State(f"input_K_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
@@ -339,44 +347,43 @@ def update_plots_greek_vs_stock_price_from_store(*stored_data):
     ],
 )
 def update_greek_vs_strike_price_plots(*args):
-    """
-    Callback to compute and update Greek plots dynamically for strike price across multiple exotic options.
-    """
     n_exotics = len(EXOTIC_OPTION_TYPES)
     n_greeks = len(GREEKS)
 
-    # Separate n_clicks and states
+    # Separate n_clicks, stored data, and states
     n_clicks = args[:n_exotics * n_greeks]
-    states = args[n_exotics * n_greeks:]
+    stored_data = args[n_exotics * n_greeks : n_exotics * n_greeks * 2]
+    states = args[n_exotics * n_greeks * 2:]
 
     # Group states by exotic type
-    n_states = len(states) // n_exotics
+    n_states_per_exotic = 5  # S0, K, T, r, sigma
     split_states = [
         states[i::n_exotics] for i in range(n_exotics)
     ]
 
-    # Initialize output plots
-    updated_plots = []
+    # Initialize updated plots with empty_fig by default
+    updated_plots = [
+        stored_data[i] if stored_data[i] is not None else empty_fig
+        for i in range(len(stored_data))
+    ]
 
-    for exotic, state_set in zip(EXOTIC_OPTION_TYPES, split_states):
+    for exotic_index, (exotic, state_set) in enumerate(zip(EXOTIC_OPTION_TYPES, split_states)):
         S0, K, T, r, sigma = state_set
 
-        # Constants for all exotic options
         h = H
-        K_range = K_RANGE
+        K_range = K_RANGE  # Define a range of strike prices
         Z = Z_precomputed
 
-        for i, greek in enumerate(GREEKS):
-            button_index = EXOTIC_OPTION_TYPES.index(exotic) * n_greeks + i
+        for greek_index, greek in enumerate(GREEKS):
+            output_index = exotic_index * n_greeks + greek_index
             triggered_button = callback_context.triggered[0]["prop_id"].split(".")[0]
 
             if triggered_button == f"button_compute_{greek}_vs_strike_price_{exotic}" and Z is not None:
                 plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek)
-                updated_plots.append(plot)
-            else:
-                updated_plots.append(empty_fig)  # Empty figure if not updated
+                updated_plots[output_index] = plot
 
     return tuple(updated_plots)
+
 
 
 @app.callback(
@@ -393,9 +400,10 @@ def update_greek_vs_strike_price_plots(*args):
 )
 def update_plots_greek_vs_strike_price_from_store(*stored_data):
     """
-    Callback to render stored plots for Greeks vs strike price in their respective graphs.
+    Callback to render stored plots for Greeks vs Strike Price in their respective graphs.
+    Returns empty_fig if store data is None.
     """
-    return tuple(stored_data)
+    return tuple(stored_data[i] if stored_data[i] is not None else empty_fig for i in range(len(stored_data)))
 
 
 
