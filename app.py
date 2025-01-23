@@ -294,13 +294,10 @@ div_rho_asian = html.Div([html.H5('Asian Rho', className="text-center"),
                                         dbc.Col([dcc.Store(id="store_plot_rho_vs_strike_price"), 
                                                 dcc.Graph(id = 'plot_rho_vs_strike_price_asian', style={"height": "500px"}),
                                                 button_compute_rho_vs_strike_price
-                                                #slider_volatilities_asian_rho
-                                                ], width=4),  # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
+                                                ], width=4),  
                                         dbc.Col([dcc.Store(id="rho-vs-strike-different-ttm-store"),
                                                  dcc.Graph(id = 'plot-rho-vs-strike-different-ttm'),
-                                                 # slider_ttm_asian_rho,
-                                                 ], width=4)]),] # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
-                                    # TODO: Also add plot where axis is time left to expiration 
+                                                 ], width=4)]),] 
                                     , style = {'margin-bottom': '20px'})
 
 div_greeks_asian = dbc.Container([html.H4("Greeks for Asian Options", className="text-center"),
