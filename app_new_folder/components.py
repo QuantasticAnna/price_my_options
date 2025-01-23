@@ -51,7 +51,7 @@ def generate_input_table(exotic_option_type):
         html.Div: A Div containing the input table for the specified exotic option type.
     """
     return html.Div([
-        html.H4(f"Specify {exotic_option_type.capitalize()} Option Parameters", className="text-center text-light"),
+        html.H4(f"{exotic_option_type.capitalize()} Option Parameters", className="text-center text-light"),
         dbc.Table(
             [
                 html.Thead(html.Tr([
@@ -265,14 +265,18 @@ def generate_main_div(exotic_option_type):
     return html.Div([
         html.H4(f"{exotic_option_type.capitalize()} Options", style={'margin': '20px'}),
         dbc.Row([
-            dbc.Col(html.Div(id=f"plot_first_n_simulations_{exotic_option_type}"), width=8),
+            dbc.Col(html.Div(dcc.Graph(id=f"plot_first_n_simulations_{exotic_option_type}", style={"height": "700px"})), width=8),
             dbc.Col([
                 dbc.Row([
                     dbc.Col(generate_input_table(exotic_option_type)),
                     dbc.Col(generate_greek_table(exotic_option_type))
                 ]),
                 dbc.Row(generate_option_pricing_table(exotic_option_type)),
-                dbc.Row(html.Div(id=f"div_update_option_parameters_{exotic_option_type}"))
+                dbc.Row(html.Div(html.Button("Update Parameters", 
+                                            id=f"button_update_params_{exotic_option_type}", 
+                                            n_clicks=0, 
+                                            className="btn btn-primary mt-3"),
+                                 style={"textAlign": "center"},))
             ])
         ]),
         dbc.Row([generate_greeks_accordion(exotic_option_type)])
