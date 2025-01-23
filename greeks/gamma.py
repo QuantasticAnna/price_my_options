@@ -1,5 +1,5 @@
 import numpy as np
-from delta import compute_delta 
+from greeks.delta import compute_delta 
 
 # Note: we spend a lot of time computing delta for multiple stocks prices, 
 # and probably here we compute it again for the same prices, 

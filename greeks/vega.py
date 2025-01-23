@@ -61,15 +61,17 @@ def compute_vega(Z: np.ndarray,
     prices_S_sigma_h = pricer(S_sigma_h, K, T, r, **kwargs)
 
     # Extract prices for call options
-    # We use the price of the call, then we do not differenciate anymore between call and put, 
-        # because vega call = vegga put
     price_S = prices_S['price_call']
-    price_S_sigma_h = prices_S_sigma_h['price_call']
+    price_S_sigma_h= prices_S_sigma_h['price_call']
 
     # Compute Vega for call options
     vega = (price_S_sigma_h - price_S) / h
 
-    return {'vega': vega}
+    # Note: we know that vega_call = vega_put, so we note it just 'vega'
+    # But in generic functions for greeks, like greek_vs_stock_price, greek_vs_strike_price...
+    # We expect as input a dictionary {'greek_call': greek_call, 'greek_put': greek_put}
+    return {'vega_call': vega,
+            'vega_put': vega}
 
 def vega_vs_stock_price(Z: np.ndarray, 
                          S0_range: np.ndarray, 

@@ -1,5 +1,5 @@
 
-from dash import Dash, dcc, html, callback, Input, Output, State
+from dash import Dash, dcc, html, callback, Input, Output, State, callback_context
 from dash.dependencies import Input, Output
 import plotly.express as px
 import joblib
@@ -15,10 +15,14 @@ from pricer.asian import plotter_asian, pricer_asian
 from pricer.lookback import plotter_lookback
 from custom_templates import cyborg_template
 from dash import dash_table
-from greeks.delta import compute_delta, delta_vs_stock_price, plot_delta_vs_stock_price, delta_vs_strike_price_for_multiple_volatility, delta_vs_strike_price_for_multiple_ttm
-from greeks.theta import plot_theta_vs_stock_price
-from greeks.vega import plot_vega_vs_stock_price
-from greeks.rho import plot_rho_vs_stock_price
+from greeks.delta import compute_delta, delta_vs_strike_price_for_multiple_volatility, delta_vs_strike_price_for_multiple_ttm
+# from greeks.delta import delta_vs_stock_price, plot_delta_vs_stock_price, delta_vs_strike_price_for_multiple_volatility, delta_vs_strike_price_for_multiple_ttm
+# from greeks.theta import plot_theta_vs_stock_price
+# from greeks.vega import plot_vega_vs_stock_price
+# from greeks.rho import plot_rho_vs_stock_price
+
+from greeks.greeks_functions import plot_greek_vs_stock_price, plot_greek_vs_strike_price
+
 from constants import VOLATILITY_ARRAY, TTM_ARRAY, H, K_RANGE, S0_RANGE, EXOTIC_TYPE, TTM_ARRAY_VEGA, VOLATILITY_ARRAY_VEGA
 
 # All stuff relative to Z recomputation are signaled by #ZRECOMPUTE (to do control F easily)
@@ -193,6 +197,7 @@ slider_volatilities_asian = html.Div([html.Label("Volatility (%):"),
 #                                     ], style = {'margin-bottom': '20px'})
 
 div_delta_asian = html.Div([html.H5('Asian Delta', className="text-center"),
+                            dcc.Store(id="store_delta_plot"),
                             html.P('Note: plots vega vs stock, vega vs strike for different ttm, vega vs ttm, (is vega vs strike for different vol interesting?)'),
                             button_compute_delta,
                             delta_asian_values,
@@ -240,6 +245,7 @@ slider_volatilities_asian_vega = html.Div([html.Label("Volatility (%):"),
 
 div_vega_asian = html.Div([html.H5('Asian Vega', className="text-center"),
                            button_compute_vega,
+                           dcc.Store(id="store_vega_plot"),
                             # vega_asian_values, #TO CREATE
                             dbc.Row([dbc.Col([dcc.Graph(id="plot_vega_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
                                         dbc.Col([dcc.Store(id="vega-vs-strike-different-vol-store"), 
@@ -265,6 +271,7 @@ button_compute_theta = html.Div(html.Button("Compute Theta", id="button_compute_
 
 div_theta_asian = html.Div([html.H5('Asian Theta', className="text-center"),
                            button_compute_theta,
+                           dcc.Store(id="store_theta_plot"),
                             # theta_asian_values, #TO CREATE
                             dbc.Row([dbc.Col([dcc.Graph(id="plot_theta_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
                                         dbc.Col([dcc.Store(id="theta-vs-strike-different-vol-store"), 
@@ -285,6 +292,7 @@ button_compute_rho = html.Div(html.Button("Compute Rho", id="button_compute_rho"
 
 div_rho_asian = html.Div([html.H5('Asian Rho', className="text-center"),
                            button_compute_rho,
+                           dcc.Store(id="store_rho_plot"),
                             # rho_asian_values, #TO CREATE
                             dbc.Row([dbc.Col([dcc.Graph(id="plot_rho_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
                                         dbc.Col([dcc.Store(id="rho-vs-strike-different-vol-store"), 
@@ -534,167 +542,133 @@ def update_prices(n_clicks, S0, K, T, sigma, r):
     else:
         return ' ', ' '
 
-@app.callback(
-    Output('plot_delta_call_vs_stock_price_asian', 'figure'),
-     Input('menu_bar', 'value'), ## at a later stage we will the value of the menu bar? for now, hardcoded for asian
-     Input("button_compute_delta", "n_clicks"),
-    State("input_S0", "value"),
-    State("input_K", "value"),
-    State("input_T", "value"),
-    State("input_r", "value"),
-    State("input_sigma", "value"))
-def show_delta_plots_vs_stock_price(menu_bar_value, n_clicks, S0, K, T, r, sigma):
-    h = H
-    S0_range = S0_RANGE  
-    exotic_type = EXOTIC_TYPE # later will be value of menu bar 
 
-    if n_clicks > 0 and Z_precomputed is not None:
 
-        fig  = plot_delta_vs_stock_price(Z_precomputed, S0_range, K, T, r, sigma, h, exotic_type)# for asian, no kwargs
-        return fig
 
-    else: 
-        empty_fig = go.Figure()
-        empty_fig.update_layout(
-            title="Delta vs Stock Price",
-            xaxis_title="Stock Price (S)",
-            yaxis_title="Delta",
-            legend=dict(
-                title="Option Type",
-                orientation="h",
-                y=-0.2,
-                x=0.5,
-                xanchor="center"
-            ),
-            margin=dict(l=50, r=50, t=50, b=50),
-            template=cyborg_template
-    )
-        return empty_fig
-    
-
-@app.callback(
-    Output('plot_theta_call_vs_stock_price_asian', 'figure'),
-     Input('menu_bar', 'value'), ## at a later stage we will the value of the menu bar? for now, hardcoded for asian
-     Input("button_compute_theta", "n_clicks"),
-    State("input_S0", "value"),
-    State("input_K", "value"),
-    State("input_T", "value"),
-    State("input_r", "value"),
-    State("input_sigma", "value"))
-def show_theta_plots_vs_stock_price(menu_bar_value, n_clicks, S0, K, T, r, sigma):
-    h = H
-    S0_range = S0_RANGE  
-    exotic_type = EXOTIC_TYPE # later will be value of menu bar 
-
-    if n_clicks > 0 and Z_precomputed is not None:
-
-        fig  = plot_theta_vs_stock_price(Z_precomputed, S0_range, K, T, r, sigma, h, exotic_type)# for asian, no kwargs
-        return fig
-
-    else: 
-        empty_fig = go.Figure()
-        empty_fig.update_layout(
-            title="Theta vs Stock Price",
-            xaxis_title="Stock Price (S)",
-            yaxis_title="Delta",
-            legend=dict(
-                title="Option Type",
-                orientation="h",
-                y=-0.2,
-                x=0.5,
-                xanchor="center"
-            ),
-            margin=dict(l=50, r=50, t=50, b=50),
-            template=cyborg_template
-    )
-        return empty_fig
-    
-
-@app.callback(
-    Output('plot_vega_call_vs_stock_price_asian', 'figure'),
-     Input('menu_bar', 'value'), ## at a later stage we will the value of the menu bar? for now, hardcoded for asian
-     Input("button_compute_vega", "n_clicks"),
-    State("input_S0", "value"),
-    State("input_K", "value"),
-    State("input_T", "value"),
-    State("input_r", "value"),
-    State("input_sigma", "value"))
-def show_vega_plots_vs_stock_price(menu_bar_value, n_clicks, S0, K, T, r, sigma):
-    h = H
-    S0_range = S0_RANGE  
-    exotic_type = EXOTIC_TYPE # later will be value of menu bar 
-
-    if n_clicks > 0 and Z_precomputed is not None:
-
-        fig  = plot_vega_vs_stock_price(Z_precomputed, S0_range, K, T, r, sigma, h, exotic_type)# for asian, no kwargs
-        return fig
-
-    else: 
-        empty_fig = go.Figure()
-        empty_fig.update_layout(
-            title="Vega vs Stock Price",
-            xaxis_title="Stock Price (S)",
-            yaxis_title="Delta",
-            legend=dict(
-                title="Option Type",
-                orientation="h",
-                y=-0.2,
-                x=0.5,
-                xanchor="center"
-            ),
-            margin=dict(l=50, r=50, t=50, b=50),
-            template=cyborg_template
-    )
-        return empty_fig
-    
-@app.callback(
-    Output('plot_rho_call_vs_stock_price_asian', 'figure'),
-     Input('menu_bar', 'value'), ## at a later stage we will the value of the menu bar? for now, hardcoded for asian
-     Input("button_compute_rho", "n_clicks"),
-    State("input_S0", "value"),
-    State("input_K", "value"),
-    State("input_T", "value"),
-    State("input_r", "value"),
-    State("input_sigma", "value"))
-def show_rho_plots_vs_stock_price(menu_bar_value, n_clicks, S0, K, T, r, sigma):
-    h = H
-    S0_range = S0_RANGE  
-    exotic_type = EXOTIC_TYPE # later will be value of menu bar 
-
-    if n_clicks > 0 and Z_precomputed is not None:
-
-        fig  = plot_rho_vs_stock_price(Z_precomputed, S0_range, K, T, r, sigma, h, exotic_type)# for asian, no kwargs
-        return fig
-
-    else: 
-        empty_fig = go.Figure()
-        empty_fig.update_layout(
-            title="Rho vs Stock Price",
-            xaxis_title="Stock Price (S)",
-            yaxis_title="Rho",
-            legend=dict(
-                title="Option Type",
-                orientation="h",
-                y=-0.2,
-                x=0.5,
-                xanchor="center"
-            ),
-            margin=dict(l=50, r=50, t=50, b=50),
-            template=cyborg_template
-    )
-        return empty_fig
 
 
 @app.callback(
-    Output("delta-vs-strike-different-vol-store", "data"),
-    Input("button_update_params", "n_clicks"),
     [
+        Output("store_delta_plot", "data"),
+        Output("store_vega_plot", "data"),
+        Output("store_theta_plot", "data"),
+        Output("store_rho_plot", "data"),
+        # Output("store_gamma_plot", "data"), # Uncomment when gamma is added
+    ],
+    [
+        Input("button_compute_delta", "n_clicks"),
+        Input("button_compute_vega", "n_clicks"),
+        Input("button_compute_theta", "n_clicks"),
+        Input("button_compute_rho", "n_clicks"),
+        # Input("button_compute_gamma", "n_clicks"), # Uncomment when gamma is added
+    ],
+    [
+        State("menu_bar", "value"),
         State("input_S0", "value"),
+        State("input_K", "value"),
         State("input_T", "value"),
         State("input_r", "value"),
-        State("slider-volatility-asian", "marks"),
-    ]
+        State("input_sigma", "value"),
+        State("store_delta_plot", "data"),
+        State("store_vega_plot", "data"),
+        State("store_theta_plot", "data"),
+        State("store_rho_plot", "data"),
+        # State("store_gamma_plot", "data"), # Uncomment when gamma is added
+    ],
 )
+def update_greek_plots(
+    n_clicks_delta, n_clicks_vega, n_clicks_theta, n_clicks_rho, 
+    menu_bar_value, S0, K, T, r, sigma, 
+    stored_delta, stored_vega, stored_theta, stored_rho
+    # Add stored_gamma when gamma is defined
+):
+    # Define constants
+    h = H
+    S0_range = S0_RANGE
+    exotic_type = EXOTIC_TYPE  # Later will depend on menu_bar_value
+    Z = Z_precomputed
+
+    # Initialize empty figures (to be used if not updated)
+    empty_fig = go.Figure()
+    empty_fig.update_layout(
+        title="Greek vs Stock Price",
+        xaxis_title="Stock Price (S)",
+        yaxis_title="Greek",
+        legend=dict(
+            title="Option Type",
+            orientation="h",
+            y=-0.2,
+            x=0.5,
+            xanchor="center",
+        ),
+        margin=dict(l=50, r=50, t=50, b=50),
+        template=cyborg_template,
+    )
+
+    # Initialize outputs with stored data or empty figures
+    delta_plot = stored_delta or empty_fig
+    vega_plot = stored_vega or empty_fig
+    theta_plot = stored_theta or empty_fig
+    rho_plot = stored_rho or empty_fig
+    # gamma_plot = stored_gamma or empty_fig # Uncomment when gamma is defined
+
+    # Check which button was clicked
+    triggered = callback_context.triggered[0]["prop_id"].split(".")[0]
+    if Z is not None:
+        if triggered == "button_compute_delta":
+            delta_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "delta")
+        elif triggered == "button_compute_vega":
+            vega_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "vega")
+        elif triggered == "button_compute_theta":
+            theta_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "theta")
+        elif triggered == "button_compute_rho":
+            rho_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "rho")
+        # elif triggered == "button_compute_gamma":
+        #     gamma_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "gamma")
+
+    # Return updated figures
+    return delta_plot, vega_plot, theta_plot, rho_plot
+
+
+
+
+
+@app.callback(
+    [
+        Output("plot_delta_call_vs_stock_price_asian", "figure"),
+        Output("plot_vega_call_vs_stock_price_asian", "figure"),
+        Output("plot_theta_call_vs_stock_price_asian", "figure"),
+        Output("plot_rho_call_vs_stock_price_asian", "figure"),
+        # Output("plot_gamma_call_vs_stock_price_asian", "figure"), # Uncomment when gamma is added
+    ],
+    [
+        Input("store_delta_plot", "data"),
+        Input("store_vega_plot", "data"),
+        Input("store_theta_plot", "data"),
+        Input("store_rho_plot", "data"),
+        # Input("store_gamma_plot", "data"), # Uncomment when gamma is added
+    ],
+)
+def update_plots_from_store(delta_plot, vega_plot, theta_plot, rho_plot):
+    # Return the stored figures for rendering
+    return delta_plot, vega_plot, theta_plot, rho_plot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def compute_deltas_vs_strike_for_diff_vol(n_clicks, S0, T, r, volatility_marks):
     if n_clicks > 0 and Z_precomputed is not None:
         h = H
