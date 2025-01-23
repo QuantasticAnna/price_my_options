@@ -122,18 +122,6 @@ plot_first_n_simulations_asian = dcc.Graph(id="plot_first_n_simulations_asian", 
 
 plot_first_n_simulations_lookback = dcc.Graph(id="plot_first_n_simulations_lookback", style={"height": "500px"})
 
-# greeks_asian = html.Div([delta_call_asian, 
-#                          delta_put_asian, 
-#                          delta_call_vs_stock_price_asian,
-#                         #  delta_put_vs_stock_price_asian,  # Necessary? Useful?
-#                          delta_call_vs_strike_price_asian, 
-#                          #  delta_put_vs_strike_price_asian,  # Necessary? Useful?
-#                          slider_volatilities_asian,
-#                          delta_vs_strike_price_for_multiple_volatility_asian, # again, call and put distinction? 
-#                          slider_ttm_asian, 
-#                          delta_vs_strike_price_for_multiple_TTM_asian,
-#                          ])
-
 
 # TODO: choose one style between the two tables (options param, greeks table) and apply it to the other tbale
 greeks_table_asian = html.Div([html.H4("Option Greeks (Call)", className="text-center text-light"),
@@ -162,9 +150,18 @@ delta_asian_values = html.Div([html.Label("Delta Call Asian:"),
                                html.Label("Delta Put Asian:"), 
                                html.P(id = 'delta-put-asian')])
 
-button_compute_delta = html.Div(html.Button("Compute Delta vs Stock Price", id="button_compute_delta", n_clicks=0, className="btn btn-primary mt-3"),
-                                style={"textAlign": "center"},
-                            )
+button_compute_delta_vs_stock_price = html.Div(html.Button("Compute Delta vs Stock Price", 
+                                                           id="button_compute_delta_vs_stock_price", 
+                                                           n_clicks=0, 
+                                                           className="btn btn-primary mt-3"),
+                                              style={"textAlign": "center"})
+
+button_compute_delta_vs_strike_price = html.Div(html.Button("Compute Delta vs Strike Price", 
+                                                           id="button_compute_delta_vs_strike_price", 
+                                                           n_clicks=0, 
+                                                           className="btn btn-primary mt-3"),
+                                              style={"textAlign": "center"})
+
 
 slider_ttm_asian = html.Div([html.Label("Time to Maturity (Years):"),
                                         dcc.Slider(
@@ -187,22 +184,16 @@ slider_volatilities_asian = html.Div([html.Label("Volatility (%):"),
                                         value=VOLATILITY_ARRAY.max(), #0.2,  # Default value
                                     )])
 
-# div_delta_asian_card = dbc.Card([dbc.CardHeader(html.H5('Asian Delta', className="text-center")),
-#                             dbc.CardBody([delta_asian_values,
-#                                     dbc.Row([dbc.Col([figure_delta_call_vs_stock_price_asian], width=4),
-#                                              dbc.Col([dcc.Store(id="delta-vs-strike-different-vol-store"),
-#                                                       dcc.Graph(id = 'plot-delta-vs-strike-different-vol'),
-#                                                       slider_volatilities_asian,], width=4),  #placeholder figures
-#                                              dbc.Col([slider_ttm_asian,
-#                                                       dcc.Graph(figure=go.Figure(), id = 'plot-delta-vs-strike-different-ttm')], width=4)]),]), #placeholder figures
-#                                     ], style = {'margin-bottom': '20px'})
 
-div_delta_asian = html.Div([html.H5('Asian Delta', className="text-center"),
-                            dcc.Store(id="store_delta_plot"),
-                            html.P('Note: plots vega vs stock, vega vs strike for different ttm, vega vs ttm, (is vega vs strike for different vol interesting?)'),
-                            button_compute_delta,
+div_delta_asian = html.Div([html.H5('Asian Delta', className="text-center"),  # reorganise div
+                            dcc.Store(id="store_plot_delta_vs_stock_price"),
+                            button_compute_delta_vs_strike_price,
                             delta_asian_values,
-                            dbc.Row([dbc.Col([dcc.Graph(id="plot_delta_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
+                            dcc.Graph(id="plot_delta_vs_strike_price_asian", style={"height": "500px"}),
+                            dcc.Store(id="store_plot_delta_vs_strike_price"),
+                            dbc.Row([dbc.Col([dcc.Graph(id="plot_delta_vs_stock_price_asian", style={"height": "500px"}),
+                                              button_compute_delta_vs_stock_price,], width=4),
+                                     
                                         dbc.Col([dcc.Store(id="delta-vs-strike-different-vol-store"),
                                                 dcc.Graph(id = 'plot-delta-vs-strike-different-vol'),
                                                 slider_volatilities_asian], width=4),  #placeholder figures
@@ -219,67 +210,60 @@ div_gamma_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Gamma', className="tex
                                     ], style = {'margin-bottom': '20px'})
 
 
-button_compute_vega = html.Div(html.Button("Compute Vega", id="button_compute_vega", n_clicks=0, className="btn btn-primary mt-3"),
-                                style={"textAlign": "center"},
-                            )
+button_compute_vega_vs_stock_price = html.Div(html.Button("Compute Vega vs Stock Price", 
+                                                          id="button_compute_vega_vs_stock_price", 
+                                                          n_clicks=0, 
+                                                          className="btn btn-primary mt-3"),
+                                             style={"textAlign": "center"},)
 
-slider_ttm_asian_vega = html.Div([html.Label("Time to Maturity (Years):"),
-                                        dcc.Slider(
-                                            id="slider-ttm-asian-vega",
-                                            min=TTM_ARRAY_VEGA.min(),
-                                            max=TTM_ARRAY_VEGA.max(),
-                                            step=None,
-                                            marks={value: f"{value:.4f}" for value in TTM_ARRAY_VEGA},  # Use values as keys
-                                            value=TTM_ARRAY_VEGA.max()  # Default index corresponding to 1 year
-                                        )])
-
-slider_volatilities_asian_vega = html.Div([html.Label("Volatility (%):"),
-                                    dcc.Slider(
-                                        id="slider-volatility-asian-vega",
-                                        min=VOLATILITY_ARRAY_VEGA.min(), #0.1,
-                                        max=VOLATILITY_ARRAY_VEGA.max(), #0.6,
-                                        step=None,
-                                        marks = {value: f"{value:.1f}" for value in VOLATILITY_ARRAY_VEGA},
-                                        value=VOLATILITY_ARRAY_VEGA.max(), #0.2,  # Default value
-                                    )])
+button_compute_vega_vs_strike_price = html.Div(html.Button("Compute Vega vs Strike Price", 
+                                                          id="button_compute_vega_vs_strike_price", 
+                                                          n_clicks=0, 
+                                                          className="btn btn-primary mt-3"),
+                                             style={"textAlign": "center"},)
 
 
 div_vega_asian = html.Div([html.H5('Asian Vega', className="text-center"),
-                           button_compute_vega,
-                           dcc.Store(id="store_vega_plot"),
+                           dcc.Store(id="store_plot_vega_vs_stock_price"),
                             # vega_asian_values, #TO CREATE
-                            dbc.Row([dbc.Col([dcc.Graph(id="plot_vega_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
-                                        dbc.Col([dcc.Store(id="vega-vs-strike-different-vol-store"), 
-                                                dcc.Graph(id = 'plot-vega-vs-strike-different-vol'),
-                                                slider_volatilities_asian_vega], width=4),  # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
-                                        dbc.Col([dcc.Store(id="vega-vs-strike-different-ttm-store"),
-                                                 dcc.Graph(id = 'plot-vega-vs-strike-different-ttm'),
-                                                 slider_ttm_asian_vega,], width=4)]),] # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
+                            dbc.Row([dbc.Col([dcc.Graph(id="plot_vega_vs_stock_price_asian", style={"height": "500px"}),
+                                             button_compute_vega_vs_stock_price,], width=4),
+                                     dbc.Col([dcc.Store(id="store_plot_vega_vs_strike_price"), 
+                                              dcc.Graph(id = 'plot_vega_vs_strike_price_asian', style={"height": "500px"}),
+                                              button_compute_vega_vs_strike_price
+                                              ], width=4),  # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
+                                     dbc.Col([dcc.Store(id="vega-vs-strike-different-ttm-store"),
+                                                dcc.Graph(id = 'plot-vega-vs-strike-different-ttm'),
+                                                
+                                                ], width=4)]),] # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
                                     # TODO: Also add plot where axis is time left to expiration 
                                     , style = {'margin-bottom': '20px'})
 
 
-div_theta_asian = dbc.Card([dbc.CardHeader(html.H5('Asian Theta', className="text-center")),
-                            dbc.CardBody([html.P('Values'),
-                                            html.P('Plot1'),
-                                            html.P('Plot2')],),
-                                    ], style = {'margin-bottom': '20px'})
+button_compute_theta_vs_stock_price = html.Div(html.Button("Compute Theta vs Stock Price", 
+                                                           id="button_compute_theta_vs_stock_price", 
+                                                           n_clicks=0, 
+                                                           className="btn btn-primary mt-3"),
+                                              style={"textAlign": "center"},)
 
+button_compute_theta_vs_strike_price = html.Div(html.Button("Compute Theta vs Strike Price", 
+                                                           id="button_compute_theta_vs_strike_price", 
+                                                           n_clicks=0, 
+                                                           className="btn btn-primary mt-3"),
+                                              style={"textAlign": "center"},)
 
-button_compute_theta = html.Div(html.Button("Compute Theta", id="button_compute_theta", n_clicks=0, className="btn btn-primary mt-3"),
-                                style={"textAlign": "center"},
-                            )
 
 div_theta_asian = html.Div([html.H5('Asian Theta', className="text-center"),
-                           button_compute_theta,
-                           dcc.Store(id="store_theta_plot"),
+                           dcc.Store(id="store_plot_theta_vs_stock_price"),
                             # theta_asian_values, #TO CREATE
-                            dbc.Row([dbc.Col([dcc.Graph(id="plot_theta_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
-                                        dbc.Col([dcc.Store(id="theta-vs-strike-different-vol-store"), 
-                                                dcc.Graph(id = 'plot-theta-vs-strike-different-vol'),
+                            dbc.Row([dbc.Col([dcc.Graph(id="plot_theta_vs_stock_price_asian", style={"height": "500px"}),
+                                              button_compute_theta_vs_stock_price,], width=4),
+                                        dbc.Col([dcc.Store(id="store_plot_theta_vs_strike_price"), 
+                                                dcc.Graph(id = 'plot_theta_vs_strike_price_asian', style={"height": "500px"}),
+                                                button_compute_theta_vs_strike_price
                                                 #slider_volatilities_asian_theta
                                                 ], width=4),  # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
-                                        dbc.Col([dcc.Store(id="thetaa-vs-strike-different-ttm-store"),
+                                        dbc.Col([dcc.Store(id="theta-vs-strike-different-ttm-store"),
                                                  dcc.Graph(id = 'plot-theta-vs-strike-different-ttm'),
                                                  # slider_ttm_asian_theta,
                                                  ], width=4)]),] # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
@@ -287,17 +271,29 @@ div_theta_asian = html.Div([html.H5('Asian Theta', className="text-center"),
                                     , style = {'margin-bottom': '20px'})
 
 
-button_compute_rho = html.Div(html.Button("Compute Rho", id="button_compute_rho", n_clicks=0, className="btn btn-primary mt-3"),
-                                style={"textAlign": "center"},
-                            )
+button_compute_rho_vs_stock_price = html.Div(html.Button("Compute Rho vs Stock Price", 
+                                                         id="button_compute_rho_vs_stock_price", 
+                                                         n_clicks=0, 
+                                                         className="btn btn-primary mt-3"),
+                                             style={"textAlign": "center"},)
+
+button_compute_rho_vs_strike_price = html.Div(html.Button("Compute Rho vs Strike Price", 
+                                                         id="button_compute_rho_vs_strike_price", 
+                                                         n_clicks=0, 
+                                                         className="btn btn-primary mt-3"),
+                                             style={"textAlign": "center"},)
+
+
 
 div_rho_asian = html.Div([html.H5('Asian Rho', className="text-center"),
-                           button_compute_rho,
-                           dcc.Store(id="store_rho_plot"),
+                           
+                           dcc.Store(id="store_plot_rho_vs_stock_price"),
                             # rho_asian_values, #TO CREATE
-                            dbc.Row([dbc.Col([dcc.Graph(id="plot_rho_call_vs_stock_price_asian", style={"height": "500px"})], width=4),
-                                        dbc.Col([dcc.Store(id="rho-vs-strike-different-vol-store"), 
-                                                dcc.Graph(id = 'plot-rho-vs-strike-different-vol'),
+                            dbc.Row([dbc.Col([dcc.Graph(id="plot_rho_vs_stock_price_asian", style={"height": "500px"}),
+                                              button_compute_rho_vs_stock_price,], width=4),
+                                        dbc.Col([dcc.Store(id="store_plot_rho_vs_strike_price"), 
+                                                dcc.Graph(id = 'plot_rho_vs_strike_price_asian', style={"height": "500px"}),
+                                                button_compute_rho_vs_strike_price
                                                 #slider_volatilities_asian_rho
                                                 ], width=4),  # TODO, maybe later, both sliders should be syncrhonized (debtween delta and vega)
                                         dbc.Col([dcc.Store(id="rho-vs-strike-different-ttm-store"),
@@ -474,7 +470,8 @@ def show_plot_first_n_simulations(n_clicks, S0, K, T, r, sigma): #! Maybe instea
         title=f"First Monte Carlo Simulations of Stock Prices, with avg",
         xaxis_title="Time Steps",
         yaxis_title="Stock Price",
-        template=cyborg_template
+        template=cyborg_template,
+        margin=dict(l=20, r=20, t=50, b=10),
     )
     return empty_fig, empty_fig # empty figures
 
@@ -482,7 +479,7 @@ def show_plot_first_n_simulations(n_clicks, S0, K, T, r, sigma): #! Maybe instea
     [Output('delta-call-asian', 'children'),
      Output('delta-put-asian', 'children')],
      Input('menu_bar', 'value'), ## at a later stage we will the value of the menu bar? for now, hardcoded for asian
-     Input("button_compute_delta", "n_clicks"),
+     Input("button_compute_delta_vs_stock_price", "n_clicks"),
     State("input_S0", "value"),
     State("input_K", "value"),
     State("input_T", "value"),
@@ -547,20 +544,20 @@ def update_prices(n_clicks, S0, K, T, sigma, r):
 
 
 
-
+# 2 next callbakc: plots greeks vs stock
 @app.callback(
     [
-        Output("store_delta_plot", "data"),
-        Output("store_vega_plot", "data"),
-        Output("store_theta_plot", "data"),
-        Output("store_rho_plot", "data"),
-        # Output("store_gamma_plot", "data"), # Uncomment when gamma is added
+        Output("store_plot_delta_vs_stock_price", "data"),
+        Output("store_plot_vega_vs_stock_price", "data"),
+        Output("store_plot_theta_vs_stock_price", "data"),
+        Output("store_plot_rho_vs_stock_price", "data"),
+        # Output("store_plot_gamma_vs_stock_price", "data"), # Uncomment when gamma is added
     ],
     [
-        Input("button_compute_delta", "n_clicks"),
-        Input("button_compute_vega", "n_clicks"),
-        Input("button_compute_theta", "n_clicks"),
-        Input("button_compute_rho", "n_clicks"),
+        Input("button_compute_delta_vs_stock_price", "n_clicks"),
+        Input("button_compute_vega_vs_stock_price", "n_clicks"),
+        Input("button_compute_theta_vs_stock_price", "n_clicks"),
+        Input("button_compute_rho_vs_stock_price", "n_clicks"),
         # Input("button_compute_gamma", "n_clicks"), # Uncomment when gamma is added
     ],
     [
@@ -570,10 +567,10 @@ def update_prices(n_clicks, S0, K, T, sigma, r):
         State("input_T", "value"),
         State("input_r", "value"),
         State("input_sigma", "value"),
-        State("store_delta_plot", "data"),
-        State("store_vega_plot", "data"),
-        State("store_theta_plot", "data"),
-        State("store_rho_plot", "data"),
+        State("store_plot_delta_vs_stock_price", "data"),
+        State("store_plot_vega_vs_stock_price", "data"),
+        State("store_plot_theta_vs_stock_price", "data"),
+        State("store_plot_rho_vs_stock_price", "data"),
         # State("store_gamma_plot", "data"), # Uncomment when gamma is added
     ],
 )
@@ -616,13 +613,13 @@ def update_greek_plots(
     # Check which button was clicked
     triggered = callback_context.triggered[0]["prop_id"].split(".")[0]
     if Z is not None:
-        if triggered == "button_compute_delta":
+        if triggered == "button_compute_delta_vs_stock_price":
             delta_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "delta")
-        elif triggered == "button_compute_vega":
+        elif triggered == "button_compute_vega_vs_stock_price":
             vega_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "vega")
-        elif triggered == "button_compute_theta":
+        elif triggered == "button_compute_theta_vs_stock_price":
             theta_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "theta")
-        elif triggered == "button_compute_rho":
+        elif triggered == "button_compute_rho_vs_stock_price":
             rho_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "rho")
         # elif triggered == "button_compute_gamma":
         #     gamma_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "gamma")
@@ -636,17 +633,17 @@ def update_greek_plots(
 
 @app.callback(
     [
-        Output("plot_delta_call_vs_stock_price_asian", "figure"),
-        Output("plot_vega_call_vs_stock_price_asian", "figure"),
-        Output("plot_theta_call_vs_stock_price_asian", "figure"),
-        Output("plot_rho_call_vs_stock_price_asian", "figure"),
-        # Output("plot_gamma_call_vs_stock_price_asian", "figure"), # Uncomment when gamma is added
+        Output("plot_delta_vs_stock_price_asian", "figure"),
+        Output("plot_vega_vs_stock_price_asian", "figure"),
+        Output("plot_theta_vs_stock_price_asian", "figure"),
+        Output("plot_rho_vs_stock_price_asian", "figure"),
+        # Output("plot_gamma_call_vs_strike_price_asian", "figure"), # Uncomment when gamma is added
     ],
     [
-        Input("store_delta_plot", "data"),
-        Input("store_vega_plot", "data"),
-        Input("store_theta_plot", "data"),
-        Input("store_rho_plot", "data"),
+        Input("store_plot_delta_vs_stock_price", "data"),
+        Input("store_plot_vega_vs_stock_price", "data"),
+        Input("store_plot_theta_vs_stock_price", "data"),
+        Input("store_plot_rho_vs_stock_price", "data"),
         # Input("store_gamma_plot", "data"), # Uncomment when gamma is added
     ],
 )
@@ -656,9 +653,113 @@ def update_plots_from_store(delta_plot, vega_plot, theta_plot, rho_plot):
 
 
 
+# 2 next callbakc: plots greeks vs Strike
+
+@app.callback(
+    [
+        Output("store_plot_delta_vs_strike_price", "data"),
+        Output("store_plot_vega_vs_strike_price", "data"),
+        Output("store_plot_theta_vs_strike_price", "data"),
+        Output("store_plot_rho_vs_strike_price", "data"),
+        # Output("store_gamma_plot", "data"), # Uncomment when gamma is added
+    ],
+    [
+        Input("button_compute_delta_vs_strike_price", "n_clicks"),
+        Input("button_compute_vega_vs_strike_price", "n_clicks"),
+        Input("button_compute_theta_vs_strike_price", "n_clicks"),
+        Input("button_compute_rho_vs_strike_price", "n_clicks"),
+        # Input("button_compute_gamma", "n_clicks"), # Uncomment when gamma is added
+    ],
+    [
+        State("menu_bar", "value"),
+        State("input_S0", "value"),
+        State("input_K", "value"),
+        State("input_T", "value"),
+        State("input_r", "value"),
+        State("input_sigma", "value"),
+        State("store_plot_delta_vs_strike_price", "data"),
+        State("store_plot_vega_vs_strike_price", "data"),
+        State("store_plot_theta_vs_strike_price", "data"),
+        State("store_plot_rho_vs_strike_price", "data"),
+        # State("store_gamma_plot", "data"), # Uncomment when gamma is added
+    ],
+)
+def update_greek_plots(
+    n_clicks_delta, n_clicks_vega, n_clicks_theta, n_clicks_rho, 
+    menu_bar_value, S0, K, T, r, sigma, 
+    stored_delta, stored_vega, stored_theta, stored_rho
+    # Add stored_gamma when gamma is defined
+):
+    # Define constants
+    h = H
+    K_range = K_RANGE
+    exotic_type = EXOTIC_TYPE  # Later will depend on menu_bar_value
+    Z = Z_precomputed
+
+    # Initialize empty figures (to be used if not updated)
+    empty_fig = go.Figure()
+    empty_fig.update_layout(
+        title="Greek vs Strike Price",
+        xaxis_title="Strike Price (K)",
+        yaxis_title="Greek",
+        legend=dict(
+            title="Option Type",
+            orientation="h",
+            y=-0.2,
+            x=0.5,
+            xanchor="center",
+        ),
+        margin=dict(l=50, r=50, t=50, b=50),
+        template=cyborg_template,
+    )
+
+    # Initialize outputs with stored data or empty figures
+    delta_plot = stored_delta or empty_fig
+    vega_plot = stored_vega or empty_fig
+    theta_plot = stored_theta or empty_fig
+    rho_plot = stored_rho or empty_fig
+    # gamma_plot = stored_gamma or empty_fig # Uncomment when gamma is defined
+
+    # Check which button was clicked
+    triggered = callback_context.triggered[0]["prop_id"].split(".")[0]
+    if Z is not None:
+        if triggered == "button_compute_delta_vs_strike_price":
+            delta_plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic_type, "delta")
+        elif triggered == "button_compute_vega_vs_strike_price":
+            vega_plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic_type, "vega")
+        elif triggered == "button_compute_theta_vs_strike_price":
+            theta_plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic_type, "theta")
+        elif triggered == "button_compute_rho_vs_strike_price":
+            rho_plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic_type, "rho")
+        # elif triggered == "button_compute_gamma":
+        #     gamma_plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, "gamma")
+
+    # Return updated figures
+    return delta_plot, vega_plot, theta_plot, rho_plot
 
 
 
+
+
+@app.callback(
+    [
+        Output("plot_delta_vs_strike_price_asian", "figure"),
+        Output("plot_vega_vs_strike_price_asian", "figure"),
+        Output("plot_theta_vs_strike_price_asian", "figure"),
+        Output("plot_rho_vs_strike_price_asian", "figure"),
+        # Output("plot_gamma_call_vs_stock_price_asian", "figure"), # Uncomment when gamma is added
+    ],
+    [
+        Input("store_plot_delta_vs_strike_price", "data"),
+        Input("store_plot_vega_vs_strike_price", "data"),
+        Input("store_plot_theta_vs_strike_price", "data"),
+        Input("store_plot_rho_vs_strike_price", "data"),
+        # Input("store_gamma_plot", "data"), # Uncomment when gamma is added
+    ],
+)
+def update_plots_from_store(delta_plot, vega_plot, theta_plot, rho_plot):
+    # Return the stored figures for rendering
+    return delta_plot, vega_plot, theta_plot, rho_plot
 
 
 

@@ -255,7 +255,7 @@ def plot_greek_vs_strike_price(Z: np.ndarray,
 
     # Add horizontal line at y=0
     fig.add_trace(go.Scatter(
-        x=[min(S0_range), max(S0_range)],
+        x=[min(K_range), max(K_range)],
         y=[0, 0],
         mode='lines',
         line=dict(color='black', width=1, dash='dash'),

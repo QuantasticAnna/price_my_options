@@ -50,3 +50,22 @@ def compute_delta(Z: np.ndarray,
 
     return {'delta_call': delta_call, 'delta_put': delta_put}
 
+
+if __name__ == '__main__':
+
+    n_simulations = 100000
+    n_steps = 252
+
+    Z = np.random.standard_normal((n_simulations, n_steps))
+
+    S0 = 100
+    K = 100
+    T = 1
+    r = 0.05
+    sigma = 0.2
+    h = 0.01
+    exotic_type = 'asian'
+
+    results = compute_delta(Z, S0, K, T, r, sigma, h, exotic_type)
+
+    print(results)
