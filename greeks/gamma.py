@@ -55,76 +55,6 @@ def compute_gamma(Z: np.ndarray,
     return gamma
 
 
-def gamma_vs_stock_price(Z: np.ndarray, 
-                         S0_range: np.ndarray, 
-                         K: float, 
-                         T: float, 
-                         r: float, 
-                         sigma: float, 
-                         h: float, 
-                         n_simulations: int = 100000) -> dict:
-    """
-    Compute Gamma as a function of stock price (S0).
-
-    Parameters:
-        Z (np.ndarray): Precomputed random normals for Monte Carlo simulation.
-        S0_range (np.ndarray): Array of stock prices to evaluate.
-        K (float): Strike price.
-        T (float): Time to maturity.
-        r (float): Risk-free rate.
-        sigma (float): Volatility.
-        h (float): Small increment for finite difference calculation.
-        n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
-
-    Returns:
-        dict: Gamma values over the stock price range:
-              {'stock_price': S0_range, 'gamma': gamma_list}.
-    """
-    gamma_list = []
-
-    for S0 in S0_range:
-        gamma = compute_gamma(Z, S0, K, T, r, sigma, h, n_simulations)
-        gamma_list.append(gamma)
-
-    return {'stock_price': S0_range, 'gamma': gamma_list}
-
-import matplotlib.pyplot as plt
-
-def plot_gamma_vs_stock_price(Z: np.ndarray, 
-                              S0_range: np.ndarray, 
-                              K: float, 
-                              T: float, 
-                              r: float, 
-                              sigma: float, 
-                              h: float, 
-                              n_simulations: int = 100000):
-    """
-    Plot Gamma as a function of stock price (S0).
-
-    Parameters:
-        Z (np.ndarray): Precomputed random normals for Monte Carlo simulation.
-        S0_range (np.ndarray): Array of stock prices to evaluate.
-        K (float): Strike price.
-        T (float): Time to maturity.
-        r (float): Risk-free rate.
-        sigma (float): Volatility.
-        h (float): Small increment for finite difference calculation.
-        n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
-    """
-    # Compute Gamma vs Stock Price
-    results = gamma_vs_stock_price(Z, S0_range, K, T, r, sigma, h, n_simulations)
-
-    # Plot the results
-    plt.figure(figsize=(10, 6))
-    plt.plot(results['stock_price'], results['gamma'], label="Gamma", marker='o')
-    plt.xlabel("Stock Price (S0)")
-    plt.ylabel("Gamma")
-    plt.title("Gamma vs Stock Price")
-    plt.axhline(0, color='black', linewidth=0.5, linestyle='--')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
 
 if __name__ == "__main__":
     # Parameters
@@ -142,7 +72,7 @@ if __name__ == "__main__":
     Z = np.random.standard_normal((n_simulations, 252))
 
     # Plot Gamma vs Stock Price
-    plot_gamma_vs_stock_price(Z, S0_range, K, T, r, sigma, h, n_simulations)
+    compute_gamma(Z, S0_range, K, T, r, sigma, h, n_simulations)
 
     # gamma plot has the correct expected bell shape, but is very ugly, probably because not enough monte carlo simulation
     # as gamma is the second derivative, but if we put more simulations, then eveything else will be slowed down 

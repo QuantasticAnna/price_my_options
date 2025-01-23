@@ -9,7 +9,6 @@
 
 import plotly.graph_objects as go
 from greeks.greeks_map import greeks_mapping
-from plotly.graph_objects import Surface
 from custom_templates import cyborg_template
 import numpy as np
 

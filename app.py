@@ -15,7 +15,8 @@ from pricer.asian import plotter_asian, pricer_asian
 from pricer.lookback import plotter_lookback
 from custom_templates import cyborg_template
 from dash import dash_table
-from greeks.delta import compute_delta, delta_vs_strike_price_for_multiple_volatility, delta_vs_strike_price_for_multiple_ttm
+from greeks.delta import compute_delta
+from greeks.delta_plots_slider import delta_vs_strike_price_for_multiple_volatility, delta_vs_strike_price_for_multiple_ttm
 # from greeks.delta import delta_vs_stock_price, plot_delta_vs_stock_price, delta_vs_strike_price_for_multiple_volatility, delta_vs_strike_price_for_multiple_ttm
 # from greeks.theta import plot_theta_vs_stock_price
 # from greeks.vega import plot_vega_vs_stock_price
@@ -666,9 +667,16 @@ def update_plots_from_store(delta_plot, vega_plot, theta_plot, rho_plot):
 
 
 
-
-
-
+@app.callback(
+    Output("delta-vs-strike-different-vol-store", "data"),
+    Input("button_update_params", "n_clicks"),
+    [
+        State("input_S0", "value"),
+        State("input_T", "value"),
+        State("input_r", "value"),
+        State("slider-volatility-asian", "marks"),
+    ]
+)
 def compute_deltas_vs_strike_for_diff_vol(n_clicks, S0, T, r, volatility_marks):
     if n_clicks > 0 and Z_precomputed is not None:
         h = H

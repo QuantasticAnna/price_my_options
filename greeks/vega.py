@@ -1,7 +1,5 @@
 import numpy as np
-from pricer.asian import pricer_asian
 from pricer.monte_carlo import monte_carlo_simulations
-import matplotlib.pyplot as plt
 from constants import pricer_mapping
 from custom_templates import cyborg_template
 import plotly.graph_objects as go
@@ -72,118 +70,6 @@ def compute_vega(Z: np.ndarray,
     # We expect as input a dictionary {'greek_call': greek_call, 'greek_put': greek_put}
     return {'vega_call': vega,
             'vega_put': vega}
-
-def vega_vs_stock_price(Z: np.ndarray, 
-                         S0_range: np.ndarray, 
-                         K: float, 
-                         T: float, 
-                         r: float, 
-                         sigma: float, 
-                         h: float, 
-                         exotic_type: str,
-                         n_simulations: int = 100000,
-                         **kwargs) -> dict:
-    """
-    Compute Vega (call and put) as a function of stock price (S0).
-
-    Parameters:
-        Z (np.ndarray): Precomputed random normals for Monte Carlo simulation.
-        S0_range (np.ndarray): Array of stock prices to evaluate.
-        K (float): Strike price.
-        T (float): Time to maturity.
-        r (float): Risk-free rate.
-        sigma (float): Volatility.
-        h (float): Small increment for Vega calculation.
-        exotic_type (str): Type of exotic option (e.g., "asian", "barrier").
-        n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
-        **kwargs: Additional parameters for specific exotic options (e.g., "barrier" for barrier options).
-
-    Returns:
-        dict: Vegas for calls and puts over the stock price range:
-              {'stock_price': S0_range, 'vega_call': vega_call_list, 'vega_put': vega_put_list}.
-    """
-
-    vega_list = []
-
-    for S0 in S0_range:
-        # Compute Vega for each stock price
-        vegas = compute_vega(Z, S0, K, T, r, sigma, h, exotic_type, n_simulations=n_simulations, **kwargs)
-        vega_list.append(vegas['vega'])
-
-    return {
-        'stock_price': S0_range,
-        'vega': vega_list
-    }
-
-# def theta_vs_strike_price()
-
-# NOTE: ega is same for call and put, so get rid of all the put part, no _call and _put, and mention why in the info_note
-def plot_vega_vs_stock_price(Z: np.ndarray, 
-                              S0_range: np.ndarray, 
-                              K: float, 
-                              T: float, 
-                              r: float, 
-                              sigma: float, 
-                              h: float, 
-                              exotic_type: str,
-                              n_simulations: int = 100000,
-                              **kwargs):
-    """
-    Plot Vega (call and put) as a function of stock price (S0) using Plotly.
-
-    Parameters:
-        Z (np.ndarray): Precomputed random normals for Monte Carlo simulation.
-        S0_range (np.ndarray): Array of stock prices to evaluate.
-        K (float): Strike price.
-        T (float): Time to maturity.
-        r (float): Risk-free rate.
-        sigma (float): Volatility.
-        h (float): Small increment for Delta calculation.
-        exotic_type (str): Type of exotic option (e.g., "asian", "barrier").
-        n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
-        **kwargs: Additional parameters for specific exotic options (e.g., "barrier" for barrier options).
-    """
-    # Compute Vega vs Stock Price
-    results = vega_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, n_simulations, **kwargs)
-
-    # Create the figure
-    fig = go.Figure()
-
-    # Add trace for Vega
-    fig.add_trace(go.Scatter(
-        x=results['stock_price'],
-        y=results['vega'],
-        mode='lines+markers',
-        name='Vega'
-    ))
-
-    # Add horizontal line at y=0
-    fig.add_trace(go.Scatter(
-        x=[min(S0_range), max(S0_range)],
-        y=[0, 0],
-        mode='lines',
-        line=dict(color='black', width=1, dash='dash'),
-        showlegend=False  # Do not show in legend
-    ))
-
-    # Update layout
-    fig.update_layout(
-        title="Vega vs Stock Price",
-        xaxis_title="Stock Price (S0)",
-        yaxis_title="Vega",
-        margin=dict(
-        l=20,  # Left margin
-        r=20,  # Right margin
-        t=50,  # Top margin
-        b=10   # Bottom margin
-        ),
-        template=cyborg_template
-    )
-
-    # # Show the figure
-    # fig.show()
-
-    return(fig)
 
 
 if __name__ == "__main__":
