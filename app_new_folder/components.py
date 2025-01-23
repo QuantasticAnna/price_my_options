@@ -39,6 +39,11 @@ and plots while minimizing code duplication.
 
 from dash import dcc, html
 import dash_bootstrap_components as dbc
+import plotly.graph_objects as go
+from custom_templates import cyborg_template
+
+empty_fig = go.Figure().update_layout(margin=dict(l=50, r=50, t=50, b=50),
+                                      template=cyborg_template)
 
 def generate_input_table(exotic_option_type):
     """
@@ -227,7 +232,7 @@ def generate_greek_div(greek, exotic_option_type):
 
             # Column 3: Placeholder for additional plots (e.g., Greek vs TTM)
             dbc.Col([
-                dcc.Graph(id=f"plot_{greek}_vs_ttm_{exotic_option_type}", style={"height": "500px"})
+                dcc.Graph(figure = empty_fig, id=f"plot_{greek}_vs_ttm_{exotic_option_type}", style={"height": "500px"}) #FOR NOW: empty fig with the good template
             ], width=4),
         ])
     ], style={'margin-bottom': '20px'})

@@ -33,8 +33,9 @@ def monte_carlo_simulations(Z: np.ndarray, # Z is an input of monte carlo, so we
     n_steps = int(np.ceil(252 * T))  # Assume 252 trading days per year
     dt = T / n_steps  # Time step size
 
-    # Simulate price paths
-    # Z = np.random.standard_normal((n_simulations, n_steps))  # Random normal variables
+    # Ensure Z has sufficient columns
+    if Z.shape[1] < n_steps:
+        raise ValueError(f"Z array has insufficient columns: {Z.shape[1]} < {n_steps}")
 
     # Simulations for S0
     S = np.zeros((n_simulations, n_steps + 1))

@@ -23,6 +23,7 @@ def compute_gamma(Z: np.ndarray,
                   r: float, 
                   sigma: float, 
                   h: float, 
+                  exotic_type = str,
                   n_simulations: int = 100000) -> float:
     """
     Compute Gamma for an Asian option using finite differences.
@@ -35,6 +36,7 @@ def compute_gamma(Z: np.ndarray,
         r (float): Risk-free rate.
         sigma (float): Volatility.
         h (float): Small increment for finite difference calculation.
+        exotic_type (str): Type of exotic option (e.g., "asian", "barrier").
         n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
 
     Returns:
@@ -44,15 +46,16 @@ def compute_gamma(Z: np.ndarray,
     # Gamma_call = gamma_put, so we dont need to make two separate cases 
 
     # Compute Delta at S0
-    delta_S0 = compute_delta(Z, S0, K, T, r, sigma, h, n_simulations)['delta_call'] 
+    delta_S0 = compute_delta(Z, S0, K, T, r, sigma, h, exotic_type, n_simulations)['delta_call'] 
 
     # Compute Delta at S0 + h
-    delta_S0_h = compute_delta(Z, S0 + h, K, T, r, sigma, h, n_simulations)['delta_call']
+    delta_S0_h = compute_delta(Z, S0 + h, K, T, r, sigma, h, exotic_type, n_simulations)['delta_call']
 
     # Compute Gamma via finite difference
     gamma = (delta_S0_h - delta_S0) / h
 
-    return gamma
+    return {'gamma_call': gamma,
+            'gamma_put': gamma}
 
 
 
