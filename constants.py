@@ -41,4 +41,5 @@ S0_RANGE = np.linspace(50, 150, 10) # should be flexible around stock price (her
 EXOTIC_TYPE = 'asian'
 
 # for barrier options, should be function of the strike, and should be input in dash but not for now 
-B = 90
+B_CALL = 90  # Barrier for Down-and-Out Call
+B_PUT = 110 

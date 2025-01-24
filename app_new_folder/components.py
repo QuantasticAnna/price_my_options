@@ -257,16 +257,77 @@ def generate_greeks_accordion(exotic_option_type):
     ], start_collapsed=True, always_open=True)
 
 
+# def generate_main_div(exotic_option_type):
+#     """
+#     Generates the main Div for a given exotic option type.
+
+#     Parameters:
+#         exotic_option_type (str): The type of exotic option (e.g., 'asian', 'lookback').
+
+#     Returns:
+#         html.Div: A Div containing the full layout for the specified exotic option type.
+#     """
+#     return html.Div([
+#         html.H4(f"{exotic_option_type.capitalize()} Options", style={'margin': '20px'}),
+#         dbc.Row([
+#             dbc.Col(html.Div(dcc.Graph(id=f"plot_first_n_simulations_{exotic_option_type}", style={"height": "700px"})), width=8),
+#             dbc.Col([
+#                 dbc.Row([
+#                     dbc.Col(generate_input_table(exotic_option_type)),
+#                     dbc.Col(generate_greek_table(exotic_option_type))
+#                 ]),
+#                 dbc.Row(generate_option_pricing_table(exotic_option_type)),
+#                 dbc.Row(html.Div(html.Button("Update Parameters", 
+#                                             id=f"button_update_params_{exotic_option_type}", 
+#                                             n_clicks=0, 
+#                                             className="btn btn-primary mt-3"),
+#                                  style={"textAlign": "center"},))
+#             ])
+#         ]),
+#         dbc.Row([generate_greeks_accordion(exotic_option_type)])
+#     ], id=f"div_{exotic_option_type}")
+
+
 def generate_main_div(exotic_option_type):
     """
     Generates the main Div for a given exotic option type.
 
     Parameters:
-        exotic_option_type (str): The type of exotic option (e.g., 'asian', 'lookback').
+        exotic_option_type (str): The type of exotic option (e.g., 'asian', 'lookback', 'barrier').
 
     Returns:
         html.Div: A Div containing the full layout for the specified exotic option type.
     """
+    # Barrier-specific table (only for barrier options)
+    barrier_table = None
+    if exotic_option_type == "barrier":
+        barrier_table = dbc.Table(
+            [
+                html.Thead(html.Tr([
+                    html.Th("Parameter", className="text-light", style={"width": "50%"}),
+                    html.Th("Value", className="text-light", style={"width": "50%"}),
+                ])),
+                html.Tbody([
+                    html.Tr([
+                        html.Td("Barrier Level (Call, B_call):", className="text-light", style={"whiteSpace": "nowrap"}),
+                        html.Td(dcc.Input(id=f"input_B_call_{exotic_option_type}", type="number", value=90, step=1,
+                                          style={"height": "30px", 'width': '60px'})),
+                    ]),
+                    html.Tr([
+                        html.Td("Barrier Level (Put, B_put):", className="text-light", style={"whiteSpace": "nowrap"}),
+                        html.Td(dcc.Input(id=f"input_B_put_{exotic_option_type}", type="number", value=110, step=1,
+                                          style={"height": "30px", 'width': '60px'})),
+                    ]),
+                ])
+            ],
+            bordered=True,
+            dark=True,
+            hover=True,
+            responsive=True,
+            striped=True,
+            style={"margin-top": "20px"}
+        )
+
     return html.Div([
         html.H4(f"{exotic_option_type.capitalize()} Options", style={'margin': '20px'}),
         dbc.Row([
@@ -276,6 +337,8 @@ def generate_main_div(exotic_option_type):
                     dbc.Col(generate_input_table(exotic_option_type)),
                     dbc.Col(generate_greek_table(exotic_option_type))
                 ]),
+                # Add the barrier-specific table if the option type is "barrier"
+                dbc.Row(barrier_table) if barrier_table else None,
                 dbc.Row(generate_option_pricing_table(exotic_option_type)),
                 dbc.Row(html.Div(html.Button("Update Parameters", 
                                             id=f"button_update_params_{exotic_option_type}", 

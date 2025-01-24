@@ -18,15 +18,15 @@ import plotly.graph_objects as go
 
 
 def compute_rho(Z: np.ndarray, 
-                  S0: float,
-                  K: float, 
-                  T: float, 
-                  r: float, 
-                  sigma: float, 
-                  h: float,
-                  exotic_type: str,
-                  n_simulations: int = 100000,
-                  **kwargs) -> dict:
+                S0: float,
+                K: float, 
+                T: float, 
+                r: float, 
+                sigma: float, 
+                h: float,
+                exotic_type: str,
+                n_simulations: int = 100000,
+                **kwargs) -> dict:
     """
     Compute Rho for an exotic option using the appropriate pricer.
 
@@ -37,10 +37,10 @@ def compute_rho(Z: np.ndarray,
         T (float): Time to maturity.
         r (float): Risk-free rate.
         sigma (float): Volatility.
-        h (float): Small decrement for finite difference calculation (time decay).
+        h (float): Small increment for finite difference calculation (interest rate sensitivity).
         exotic_type (str): Type of exotic option (e.g., "asian", "barrier").
         n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
-        **kwargs: Additional parameters for specific exotic options (e.g., "barrier" for barrier options).
+        **kwargs: Additional parameters for specific exotic options (e.g., "B_call" and "B_put" for barrier options).
     
     Returns:
         dict: Rho for call and put options:
@@ -51,13 +51,22 @@ def compute_rho(Z: np.ndarray,
     if pricer is None:
         raise ValueError(f"Unsupported exotic_type: {exotic_type}")
     
-    # Compute option prices at r
+    # Simulate prices
     S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations)
-    prices_r = pricer(S, K, T, r, **kwargs)
-
-    # Compute option prices at r + h
     S_r_plus_h = monte_carlo_simulations(Z, S0, T, r + h, sigma, n_simulations)
-    prices_r_plus_h = pricer(S_r_plus_h, K, T, r + h, **kwargs)
+
+    # Extract additional parameters for barrier options, if applicable
+    if exotic_type == 'barrier':
+        B_call = kwargs.get("B_call")
+        B_put = kwargs.get("B_put")
+        if B_call is None or B_put is None:
+            raise ValueError("Barrier parameters 'B_call' and 'B_put' are required for barrier options.")
+        prices_r = pricer(S, K, T, r, B_call=B_call, B_put=B_put)
+        prices_r_plus_h = pricer(S_r_plus_h, K, T, r, B_call=B_call, B_put=B_put)
+    else:
+        # Price options using the standard pricer
+        prices_r = pricer(S, K, T, r, **kwargs)
+        prices_r_plus_h = pricer(S_r_plus_h, K, T, r, **kwargs)
 
     # Extract prices for call options
     price_call_r = prices_r['price_call']
@@ -77,6 +86,7 @@ def compute_rho(Z: np.ndarray,
             'rho_put': rho_put}
 
 
+
 if __name__ == "__main__":
     # Parameters
     S0 = 100  # Initial stock price
@@ -91,6 +101,6 @@ if __name__ == "__main__":
     Z = np.random.standard_normal((n_simulations, 252))
 
     # Compute Rho
-    rho = compute_rho(Z, S0, K, T, r, sigma, h, n_simulations)
+    rho = compute_rho(Z, S0, K, T, r, sigma, h, 'asian', n_simulations)
     print(f"Rho for Asian Call Option: {rho['rho_call']:.6f}")
     print(f"Rho for Asian Put Option: {rho['rho_put']:.6f}")

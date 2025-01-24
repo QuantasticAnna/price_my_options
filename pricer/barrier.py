@@ -1,6 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from pricer.monte_carlo import plotter_first_n_simulations, monte_carlo_simulations
+from custom_templates import cyborg_template
 
 def pricer_barrier(S: np.ndarray, K: float, T: float, r: float, B_call: float, B_put: float) -> dict:
     """
@@ -95,7 +96,7 @@ def plotter_barrier(S: np.ndarray, B_call: float, B_put: float, n_sim_to_plot=10
         title="Down-and-Out Call - Monte Carlo Simulations",
         xaxis_title="Time Steps",
         yaxis_title="Stock Price",
-        template="plotly_dark"
+        template=cyborg_template
     )
 
     # Plot for Up-and-Out Put
@@ -139,7 +140,7 @@ def plotter_barrier(S: np.ndarray, B_call: float, B_put: float, n_sim_to_plot=10
         title="Up-and-Out Put - Monte Carlo Simulations",
         xaxis_title="Time Steps",
         yaxis_title="Stock Price",
-        template="plotly_dark"
+        template=cyborg_template
     )
 
     return fig_down_and_out_call, fig_up_and_out_put

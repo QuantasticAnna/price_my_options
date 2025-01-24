@@ -53,9 +53,18 @@ def compute_theta(Z: np.ndarray,
     S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations)
     S_T_minus_h = monte_carlo_simulations(Z, S0, T - h, r, sigma, n_simulations)
 
-    # Price options using the appropriate pricer
-    prices_S = pricer(S, K, T, r, **kwargs)
-    prices_S_h = pricer(S_T_minus_h, K, T - h, r, **kwargs)
+    # Extract additional parameters for barrier options, if applicable
+    if exotic_type == 'barrier':
+        B_call = kwargs.get("B_call")
+        B_put = kwargs.get("B_put")
+        if B_call is None or B_put is None:
+            raise ValueError("Barrier parameters 'B_call' and 'B_put' are required for barrier options.")
+        prices_S = pricer(S, K, T, r, B_call=B_call, B_put=B_put)
+        prices_S_h = pricer(S_T_minus_h, K, T - h, r, B_call=B_call, B_put=B_put)
+    else:
+        # Price options using the appropriate pricer
+        prices_S = pricer(S, K, T, r, **kwargs)
+        prices_S_h = pricer(S_T_minus_h, K, T - h, r, **kwargs)
 
     # Compute Theta for call and put
     theta_call = (prices_S_h['price_call'] - prices_S['price_call']) / h
@@ -80,6 +89,11 @@ if __name__ == "__main__":
 
     # Compute Theta
     theta = compute_theta(Z, S0, K, T, r, sigma, h, exotic_type, n_simulations)
+
+    theta_barrier = compute_theta(Z, S0=100, K=100, T=1, r=0.05, sigma=0.2, h=0.01, 
+                      exotic_type="barrier", 
+                      B_call=90, B_put=110)
+    
 
     print(f"Theta for Asian Call Option: {theta['theta_call']:.6f}")
     print(f"Theta for Asian Put Option: {theta['theta_put']:.6f}")

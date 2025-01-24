@@ -24,7 +24,8 @@ def compute_gamma(Z: np.ndarray,
                   sigma: float, 
                   h: float, 
                   exotic_type = str,
-                  n_simulations: int = 100000) -> float:
+                  n_simulations: int = 100000,
+                  **kwargs) -> float:
     """
     Compute Gamma for an Asian option using finite differences.
 
@@ -38,6 +39,7 @@ def compute_gamma(Z: np.ndarray,
         h (float): Small increment for finite difference calculation.
         exotic_type (str): Type of exotic option (e.g., "asian", "barrier").
         n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
+        **kwargs: Additional parameters for specific exotic options (e.g., "barrier" for barrier options).
 
     Returns:
         dict: Gamma for call and put options:
@@ -46,10 +48,10 @@ def compute_gamma(Z: np.ndarray,
     # Gamma_call = gamma_put, so we dont need to make two separate cases 
 
     # Compute Delta at S0
-    delta_S0 = compute_delta(Z, S0, K, T, r, sigma, h, exotic_type, n_simulations)['delta_call'] 
+    delta_S0 = compute_delta(Z, S0, K, T, r, sigma, h, exotic_type, n_simulations, **kwargs)['delta_call'] 
 
     # Compute Delta at S0 + h
-    delta_S0_h = compute_delta(Z, S0 + h, K, T, r, sigma, h, exotic_type, n_simulations)['delta_call']
+    delta_S0_h = compute_delta(Z, S0 + h, K, T, r, sigma, h, exotic_type, n_simulations,  **kwargs)['delta_call']
 
     # Compute Gamma via finite difference
     gamma = (delta_S0_h - delta_S0) / h
@@ -70,12 +72,17 @@ if __name__ == "__main__":
 
     # Define stock price range
     S0_range = np.linspace(50, 150, 20)  # Stock prices from 50 to 150
+    S0 = 100
 
     # Generate Z once
     Z = np.random.standard_normal((n_simulations, 252))
 
     # Plot Gamma vs Stock Price
-    compute_gamma(Z, S0_range, K, T, r, sigma, h, n_simulations)
+    gamma_asian = compute_gamma(Z, S0, K, T, r, sigma, h, 'asian', n_simulations)
+
+    gamma_barrier = compute_gamma(Z, S0, K, T, r, sigma, h, 'barrier', B_call=90, B_put=110)
+
+    print(gamma_asian)
 
     # gamma plot has the correct expected bell shape, but is very ugly, probably because not enough monte carlo simulation
     # as gamma is the second derivative, but if we put more simulations, then eveything else will be slowed down 

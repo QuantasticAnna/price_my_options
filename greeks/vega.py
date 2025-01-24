@@ -54,9 +54,18 @@ def compute_vega(Z: np.ndarray,
     # Compute option prices at sigma + h
     S_sigma_h = monte_carlo_simulations(Z, S0, T, r, sigma + h, n_simulations)
 
-    # Price options using the appropriate pricer
-    prices_S = pricer(S, K, T, r, **kwargs)
-    prices_S_sigma_h = pricer(S_sigma_h, K, T, r, **kwargs)
+
+    # Add barrier parameters if the pricer is for barrier options
+    if exotic_type == 'barrier':
+        B_call = kwargs.get("B_call", None)
+        B_put = kwargs.get("B_put", None)
+        if B_call is None or B_put is None:
+            raise ValueError("Barrier parameters B_call and B_put must be provided for barrier options.")
+        prices_S = pricer(S, K, T, r, B_call=B_call, B_put=B_put)
+        prices_S_sigma_h = pricer(S_sigma_h, K, T, r, B_call=B_call, B_put=B_put)
+    else:
+        prices_S = pricer(S, K, T, r, **kwargs)
+        prices_S_sigma_h = pricer(S_sigma_h, K, T, r, **kwargs)
 
     # Extract prices for call options
     price_S = prices_S['price_call']
@@ -88,6 +97,10 @@ if __name__ == "__main__":
 
     # Compute Vega
     vega = compute_vega(Z, S0, K, T, r, sigma, h, exotic_type, n_simulations)
+
+    vega_barrier = compute_vega(Z, S0=100, K=100, T=1, r=0.05, sigma=0.2, h=0.01, 
+                      exotic_type="barrier", 
+                      B_call=90, B_put=110)
     print(f"Vega for Asian Call Option: {vega['vega_call']:.6f}")
     print(f"Vega for Asian Put Option: {vega['vega_put']:.6f}")
 

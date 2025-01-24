@@ -40,9 +40,18 @@ def compute_delta(Z: np.ndarray,
     S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations)
     S_h = monte_carlo_simulations(Z, S0 + h, T, r, sigma, n_simulations)
 
-    # Price options using the appropriate pricer
-    prices_S = pricer(S, K, T, r, **kwargs)
-    prices_S_h = pricer(S_h, K, T, r, **kwargs)
+    # Add barrier parameters if the pricer is for barrier options
+    if exotic_type == 'barrier':
+        B_call = kwargs.get("B_call", None)
+        B_put = kwargs.get("B_put", None)
+        if B_call is None or B_put is None:
+            raise ValueError("Barrier parameters B_call and B_put must be provided for barrier options.")
+        prices_S = pricer(S, K, T, r, B_call=B_call, B_put=B_put)
+        prices_S_h = pricer(S_h, K, T, r, B_call=B_call, B_put=B_put)
+    else:
+        # Price options using the standard pricer
+        prices_S = pricer(S, K, T, r, **kwargs)
+        prices_S_h = pricer(S_h, K, T, r, **kwargs)
 
     # Compute Delta for call and put
     delta_call = (prices_S_h['price_call'] - prices_S['price_call']) / h
