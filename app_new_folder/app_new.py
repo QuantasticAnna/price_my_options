@@ -151,6 +151,7 @@ def show_hidden_div(input_value):
 
 #     return tuple(figures)
 
+
 @app.callback(
     [Output(f"plot_first_n_simulations_{exotic}", "figure") for exotic in EXOTIC_OPTION_TYPES],
     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
@@ -163,7 +164,11 @@ def show_hidden_div(input_value):
     ] + [
         State(f"input_r_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
     ] + [
-        State(f"input_sigma_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES],
+        State(f"input_sigma_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+    ] + [
+        State("input_B_call_barrier", "value"),
+        State("input_B_put_barrier", "value"),
+    ],
 )
 def show_plot_first_n_simulations(*args):
     """
@@ -175,14 +180,14 @@ def show_plot_first_n_simulations(*args):
     Returns:
         tuple: Figures for each exotic option type.
     """
-
-    # Separate button clicks and state values
     n_exotics = len(EXOTIC_OPTION_TYPES)
-    n_clicks = args[:n_exotics]
-    states = args[n_exotics:]
+    n_clicks = args[:n_exotics]  # Button clicks for each exotic type
+    states = args[n_exotics:-2]  # Exclude barrier-specific inputs (last two states)
+    B_call, B_put = args[-2], args[-1]  # Barrier-specific inputs
 
-    # Split states for each exotic option type
+    # Reshape states for each exotic option type
     split_states = [states[i::n_exotics] for i in range(n_exotics)]
+
     figures = []
 
     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
@@ -191,14 +196,15 @@ def show_plot_first_n_simulations(*args):
             Z = np.array(Z_precomputed)  # Convert Z back to NumPy array
             S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=100000)
 
-            if exotic == "barrier":  # Specific handling for barrier options
-                B_call = B_CALL
-                B_put = B_PUT
+            if exotic == "barrier":
+                if B_call is None or B_put is None:
+                    figures.append(empty_fig)  # Return empty figure if barriers are missing
+                    continue
                 fig_call, fig_put = plotter_barrier(S, B_call, B_put, n_sim_to_plot=10)
                 figures.append(fig_call)  # Append Down-and-Out Call plot
-                # figures.append(fig_put)  # Append Up-and-Out Put plot  #TWO PLOTS FOR BARRIER OPTIONS< BUT NOT TWO PLOTS IN CURRENT LAYOUT
+                # Uncomment below if Up-and-Out Put is in the layout
+                # figures.append(fig_put)
             else:
-                # Get the appropriate plotter for the exotic option type
                 plotter = PLOTTERS.get(exotic, None)
                 if plotter is not None:
                     fig = plotter(S, n_sim_to_plot=10)
@@ -215,6 +221,8 @@ def show_plot_first_n_simulations(*args):
             figures.append(empty_fig)  # Empty figure if no clicks or missing Z_precomputed
 
     return tuple(figures)
+
+
 
 
 
@@ -241,6 +249,9 @@ def show_plot_first_n_simulations(*args):
     ] + [
         State(f"input_sigma_{exotic}", "value")
         for exotic in EXOTIC_OPTION_TYPES
+    ] + [
+        State("input_B_call_barrier", "value"),
+        State("input_B_put_barrier", "value"),
     ],
 )
 def update_greeks(*args):
@@ -255,14 +266,16 @@ def update_greeks(*args):
         tuple: Greek values for calls and puts for all exotic options.
     """
 
-    # Separate button clicks and state values
+
     n_exotics = len(EXOTIC_OPTION_TYPES)
     n_greeks = len(GREEKS)
-    n_clicks = args[:n_exotics]
-    states = args[n_exotics:]
+    n_clicks = args[:n_exotics]  # Button clicks for each exotic type
+    states = args[n_exotics:-2]  # Exclude barrier-specific inputs (last two states)
+    B_call, B_put = args[-2], args[-1]  # Barrier-specific inputs
 
-    # Split states for each exotic option type
+    # Reshape states for each exotic option type
     split_states = [states[i::n_exotics] for i in range(n_exotics)]
+
     results = []
 
     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
@@ -270,12 +283,22 @@ def update_greeks(*args):
             S0, K, T, r, sigma = state
             h = H
 
-            # Compute Greeks
-            deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-            gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-            thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-            vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-            rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+            if exotic == "barrier":
+
+                # Compute Greeks for barrier 
+                deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+                gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+                thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+                vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+                rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+                
+            else:    
+                # Compute Greeks
+                deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+                gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+                thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+                vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+                rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic)
 
             # Append results for call and put values
             results.extend([
@@ -328,16 +351,26 @@ def update_greeks(*args):
         State(f"input_r_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
     ] + [
         State(f"input_sigma_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+    ] + [
+        State("input_B_call_barrier", "value"),
+        State("input_B_put_barrier", "value"),
     ],
 )
 def update_greek_vs_stock_price_plots(*args):
+    """
+    Callback to update Greek vs Stock Price plots dynamically for multiple exotic options.
+    """
     n_exotics = len(EXOTIC_OPTION_TYPES)
     n_greeks = len(GREEKS)
 
     # Separate n_clicks, stored data, and states
     n_clicks = args[:n_exotics * n_greeks]
-    stored_data = args[n_exotics * n_greeks : n_exotics * n_greeks * 2]
+    stored_data = args[n_exotics * n_greeks: n_exotics * n_greeks * 2]
     states = args[n_exotics * n_greeks * 2:]
+
+    # Extract barrier-specific inputs
+    B_call, B_put = states[-2], states[-1]
+    states = states[:-2]  # Exclude barrier inputs from the main states
 
     # Group states by exotic type
     n_states_per_exotic = 5  # S0, K, T, r, sigma
@@ -363,12 +396,14 @@ def update_greek_vs_stock_price_plots(*args):
             triggered_button = callback_context.triggered[0]["prop_id"].split(".")[0]
 
             if triggered_button == f"button_compute_{greek}_vs_stock_price_{exotic}" and Z is not None:
-                plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
+                # Handle barrier-specific logic
+                if exotic == "barrier":
+                    plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                else:
+                    plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
                 updated_plots[output_index] = plot
 
     return tuple(updated_plots)
-
-
 
 
 @app.callback(
@@ -418,16 +453,26 @@ def update_plots_greek_vs_stock_price_from_store(*stored_data):
         State(f"input_r_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
     ] + [
         State(f"input_sigma_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+    ] + [
+        State("input_B_call_barrier", "value"),
+        State("input_B_put_barrier", "value"),
     ],
 )
 def update_greek_vs_strike_price_plots(*args):
+    """
+    Callback to dynamically update Greek vs Strike Price plots for multiple exotic options.
+    """
     n_exotics = len(EXOTIC_OPTION_TYPES)
     n_greeks = len(GREEKS)
 
     # Separate n_clicks, stored data, and states
     n_clicks = args[:n_exotics * n_greeks]
-    stored_data = args[n_exotics * n_greeks : n_exotics * n_greeks * 2]
+    stored_data = args[n_exotics * n_greeks: n_exotics * n_greeks * 2]
     states = args[n_exotics * n_greeks * 2:]
+
+    # Extract barrier-specific inputs
+    B_call, B_put = states[-2], states[-1]
+    states = states[:-2]  # Exclude barrier inputs from the main states
 
     # Group states by exotic type
     n_states_per_exotic = 5  # S0, K, T, r, sigma
@@ -453,10 +498,15 @@ def update_greek_vs_strike_price_plots(*args):
             triggered_button = callback_context.triggered[0]["prop_id"].split(".")[0]
 
             if triggered_button == f"button_compute_{greek}_vs_strike_price_{exotic}" and Z is not None:
-                plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek)
+                # Handle barrier-specific logic
+                if exotic == "barrier":
+                    plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                else:
+                    plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek)
                 updated_plots[output_index] = plot
 
     return tuple(updated_plots)
+
 
 
 

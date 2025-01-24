@@ -77,4 +77,7 @@ if __name__ == '__main__':
 
     results = compute_delta(Z, S0, K, T, r, sigma, h, exotic_type)
 
+    S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations)
+    S_h = monte_carlo_simulations(Z, S0 + h, T, r, sigma, n_simulations)
+
     print(results)
