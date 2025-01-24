@@ -39,3 +39,6 @@ K_RANGE = np.linspace(50, 150, 10)  # should be flexible around strike price (he
 S0_RANGE = np.linspace(50, 150, 10) # should be flexible around stock price (here we assume its 100)
 
 EXOTIC_TYPE = 'asian'
+
+# for barrier options, should be function of the strike, and should be input in dash but not for now 
+B = 90
