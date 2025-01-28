@@ -189,6 +189,7 @@ def generate_greek_div(greek, exotic_option_type):
     # Button IDs
     button_id_vs_stock = f"button_compute_{greek}_vs_stock_price_{exotic_option_type}"
     button_id_vs_strike = f"button_compute_{greek}_vs_strike_price_{exotic_option_type}"
+    button_id_vs_ttm = f"button_compute_{greek}_vs_ttm_{exotic_option_type}"
 
     # Store IDs
     store_id_vs_stock = f"store_plot_{greek}_vs_stock_price_{exotic_option_type}"
@@ -238,7 +239,13 @@ def generate_greek_div(greek, exotic_option_type):
 
             # Column 3: Placeholder for additional plots (e.g., Greek vs TTM)
             dbc.Col([
-                dcc.Graph(figure = empty_fig, id=f"plot_{greek}_vs_ttm_{exotic_option_type}", style={"height": "500px"}) #FOR NOW: empty fig with the good template
+                dcc.Graph(id=f"plot_{greek}_vs_ttm_{exotic_option_type}", style={"height": "500px"}),
+                html.Div(html.Button(
+                    f"Compute {greek.capitalize()} vs TTM", 
+                    id=button_id_vs_ttm, 
+                    n_clicks=0, 
+                    className="btn btn-primary mt-3"
+                ), style={"textAlign": "center"})
             ], width=4),
         ])
     ], style={'margin-bottom': '20px'})

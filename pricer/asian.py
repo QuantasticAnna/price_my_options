@@ -120,6 +120,8 @@ if __name__ == '__main__':
     # Simulate Asian option payoffs
     S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations)
 
+    print(100 - 100*np.exp(-0.05))
+
     # Plot 
     # Get the base plot from the other function
     fig = plotter_first_n_simulations(S, n_sim_to_plot)

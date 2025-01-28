@@ -47,3 +47,5 @@ B_CALL = 90  # Barrier for Down-and-Out Call
 B_PUT = 110 
 
 N_SIMULATIONS = 100000
+
+TTM_RANGE = np.linspace(0.1, 1, 10)
