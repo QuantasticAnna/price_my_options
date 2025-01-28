@@ -4,6 +4,7 @@ from pricer.binary import pricer_binary
 from pricer.lookback import pricer_lookback
 from pricer.range import pricer_range
 from pricer.cliquet import pricer_cliquet
+from pricer.european import pricer_european
 
 
 
@@ -17,6 +18,7 @@ pricer_mapping = {
     'lookback': pricer_lookback,
     'range': pricer_range,
     'cliquet': pricer_cliquet,
+    'european': pricer_european,
 }
 
 

@@ -6,6 +6,7 @@ import joblib
 from pricer.asian import plotter_asian  # should be in ascript plotter
 from pricer.lookback import plotter_lookback
 from pricer.barrier import plotter_barrier
+from pricer.european import plotter_european
 from pricer.monte_carlo import monte_carlo_simulations
 import plotly.graph_objects as go
 from app_new_folder.components import generate_main_div, empty_fig  # Import reusable components
@@ -26,7 +27,7 @@ app.title = "Price My Options NEW"
 Z_precomputed = joblib.load("Z_precomputed.joblib")
 
 # Exotic options dynamically retrieved from menu_bar
-EXOTIC_OPTION_TYPES = ["asian", "lookback", "barrier"] 
+EXOTIC_OPTION_TYPES = ["asian", "lookback", "barrier", "european"] 
 
 GREEKS = ["delta", "gamma", "theta", "vega", "rho"]
 
@@ -35,6 +36,7 @@ PLOTTERS = {
     "asian": plotter_asian,
     "lookback": plotter_lookback,
     "barrier": plotter_barrier,
+    "european": plotter_european,
 }
 
 # Menu bar for selecting exotic options
@@ -47,6 +49,7 @@ menu_bar = html.Div([
             {"value": "asian", "label": "Asian"},
             {"value": "lookback", "label": "Lookback"},
             {"value": "barrier", "label": "Barrier"},
+            {"value": "european", "label": "European"},
             #{"value": "value3", "label": "Label 3"},
         ]
     )
@@ -56,7 +59,7 @@ menu_bar = html.Div([
 div_asian = generate_main_div("asian")
 div_lookback = generate_main_div("lookback")
 div_barrier = generate_main_div("barrier")
-div3 = html.Div(html.H4("Placeholder for Value 3"), id="div_value3", hidden=True)
+div_european = generate_main_div("european")
 
 # Define the app layout
 app.layout = html.Div([
@@ -65,7 +68,7 @@ app.layout = html.Div([
     div_asian,
     div_lookback,
     div_barrier,
-    div3
+    div_european
 ], style = {'margin' : '30px'})
 
 # Callback to toggle visibility of divs based on the menu bar selection
@@ -73,7 +76,7 @@ app.layout = html.Div([
     [Output('div_asian', 'hidden'),
      Output('div_lookback', 'hidden'),
      Output('div_barrier', 'hidden'),
-     Output('div_value3', 'hidden')],
+     Output('div_european', 'hidden')],
     [Input('menu_bar', 'value')]
 )
 def show_hidden_div(input_value):
@@ -81,7 +84,7 @@ def show_hidden_div(input_value):
     show_div_asian = True
     show_div_lookback = True
     show_div_barrier = True
-    show_div3 = True
+    show_div_european = True
 
     # Show only the selected div
     if input_value == 'asian':
@@ -90,66 +93,12 @@ def show_hidden_div(input_value):
         show_div_lookback = False
     elif input_value == 'barrier':
         show_div_barrier = False
-    elif input_value == 'value3':
-        show_div3 = False
+    elif input_value == 'european':
+        show_div_european = False
 
-    return show_div_asian, show_div_lookback, show_div_barrier, show_div3
+    return show_div_asian, show_div_lookback, show_div_barrier, show_div_european
 
 
-# WITHOUT BARRIER TYPE
-# @app.callback(
-#     [Output(f"plot_first_n_simulations_{exotic}", "figure") for exotic in EXOTIC_OPTION_TYPES],
-#     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
-#     [
-#         State(f"input_S0_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_K_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_T_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_r_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_sigma_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES],
-# )
-# def show_plot_first_n_simulations(*args):
-#     """
-#     Callback to generate and update simulation plots for multiple exotic options.
-
-#     Parameters:
-#         args: A combination of n_clicks and state values dynamically passed.
-
-#     Returns:
-#         tuple: Figures for each exotic option type.
-#     """
-#     # Separate button clicks and state values
-#     n_exotics = len(EXOTIC_OPTION_TYPES)
-#     n_clicks = args[:n_exotics]
-#     states = args[n_exotics:]
-
-#     # Split states for each exotic option type
-#     split_states = [states[i::n_exotics] for i in range(n_exotics)]
-#     figures = []
-
-#     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
-#         if clicks > 0 and Z_precomputed is not None:
-#             S0, K, T, r, sigma = state
-#             Z = np.array(Z_precomputed)  # Convert Z back to NumPy array
-#             S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=100000)
-
-#             # Get the appropriate plotter for the exotic option type
-#             plotter = PLOTTERS[exotic]
-#             fig = plotter(S, n_sim_to_plot=10)
-#             fig.add_hline(
-#                 y=K,
-#                 line=dict(color="white", width=2, dash="dash"),
-#                 annotation_text=f"Strike Price (K={K})",
-#                 annotation_position="bottom right",
-#             )
-#             figures.append(fig)
-#         else:
-#             figures.append(empty_fig) # empty fig
-
-#     return tuple(figures)
 
 
 @app.callback(
