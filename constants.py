@@ -43,3 +43,5 @@ EXOTIC_TYPE = 'asian'
 # for barrier options, should be function of the strike, and should be input in dash but not for now 
 B_CALL = 90  # Barrier for Down-and-Out Call
 B_PUT = 110 
+
+N_SIMULATIONS = 100000

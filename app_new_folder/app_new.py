@@ -9,7 +9,7 @@ from pricer.barrier import plotter_barrier
 from pricer.monte_carlo import monte_carlo_simulations
 import plotly.graph_objects as go
 from app_new_folder.components import generate_main_div, empty_fig  # Import reusable components
-from constants import H, S0_RANGE, K_RANGE, B_CALL, B_PUT
+from constants import H, S0_RANGE, K_RANGE, B_CALL, B_PUT, N_SIMULATIONS
 from greeks.delta import compute_delta
 from greeks.gamma import compute_gamma
 from greeks.vega import compute_vega
@@ -194,7 +194,7 @@ def show_plot_first_n_simulations(*args):
         if clicks > 0 and Z_precomputed is not None:
             S0, K, T, r, sigma = state
             Z = np.array(Z_precomputed)  # Convert Z back to NumPy array
-            S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=50000)
+            S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)
 
             if exotic == "barrier":
                 if B_call is None or B_put is None:

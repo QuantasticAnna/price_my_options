@@ -38,7 +38,7 @@ def monte_carlo_simulations(Z: np.ndarray, # Z is an input of monte carlo, so we
         raise ValueError(f"Z array has insufficient columns: {Z.shape[1]} < {n_steps}")
 
     # Simulations for S0
-    S = np.zeros((50000, n_steps + 1))
+    S = np.zeros((n_simulations, n_steps + 1))
     S[:, 0] = S0
     for t in range(1, n_steps + 1):
         S[:, t] = S[:, t-1] * np.exp((r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * Z[:, t-1])
