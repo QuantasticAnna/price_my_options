@@ -106,28 +106,34 @@ def generate_greek_table(exotic_option_type):
         dbc.Table([
             html.Thead(html.Tr([
                 html.Th("Greek", className="text-light", style={"width": "50%"}),
-                html.Th("Value", className="text-light", style={"width": "50%"}),
+                html.Th("Call", className="text-light", style={"width": "25%"}),
+                html.Th("Put", className="text-light", style={"width": "25%"}),
             ])),
             html.Tbody([
                 html.Tr([
                     html.Td("Delta", className="text-light", style={"whiteSpace": "nowrap"}),
-                    html.Td(html.Div(id=f"value_delta_{exotic_option_type}", className="text-light")),
+                    html.Td(html.Div(id=f"value_delta_{exotic_option_type}_call", className="text-light")),
+                    html.Td(html.Div(id=f"value_delta_{exotic_option_type}_put", className="text-light")),
                 ]),
                 html.Tr([
                     html.Td("Gamma", className="text-light", style={"whiteSpace": "nowrap"}),
-                    html.Td(html.Div(id=f"value_gamma_{exotic_option_type}", className="text-light")),
+                    html.Td(html.Div(id=f"value_gamma_{exotic_option_type}_call", className="text-light")),
+                    html.Td(html.Div(id=f"value_gamma_{exotic_option_type}_put", className="text-light")),
                 ]),
                 html.Tr([
                     html.Td("Theta", className="text-light", style={"whiteSpace": "nowrap"}),
-                    html.Td(html.Div(id=f"value_theta_{exotic_option_type}", className="text-light")),
+                    html.Td(html.Div(id=f"value_theta_{exotic_option_type}_call", className="text-light")),
+                    html.Td(html.Div(id=f"value_theta_{exotic_option_type}_put", className="text-light")),
                 ]),
                 html.Tr([
                     html.Td("Vega", className="text-light", style={"whiteSpace": "nowrap"}),
-                    html.Td(html.Div(id=f"value_vega_{exotic_option_type}", className="text-light")),
+                    html.Td(html.Div(id=f"value_vega_{exotic_option_type}_call", className="text-light")),
+                    html.Td(html.Div(id=f"value_vega_{exotic_option_type}_put", className="text-light")),
                 ]),
                 html.Tr([
                     html.Td("Rho", className="text-light", style={"whiteSpace": "nowrap"}),
-                    html.Td(html.Div(id=f"value_rho_{exotic_option_type}", className="text-light")),
+                    html.Td(html.Div(id=f"value_rho_{exotic_option_type}_call", className="text-light")),
+                    html.Td(html.Div(id=f"value_rho_{exotic_option_type}_put", className="text-light")),
                 ]),
             ])
         ],

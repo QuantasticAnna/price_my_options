@@ -175,12 +175,122 @@ def show_plot_first_n_simulations(*args):
 
 
 
+# @app.callback(
+#     [
+#         Output(f"{greek}_{option_type}_{exotic}", "children")
+#         for exotic in EXOTIC_OPTION_TYPES
+#         for greek in GREEKS
+#         for option_type in ["call", "put"]
+#     ],
+#     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
+#     [
+#         State(f"input_S0_{exotic}", "value")
+#         for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_K_{exotic}", "value")
+#         for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_T_{exotic}", "value")
+#         for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_r_{exotic}", "value")
+#         for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_sigma_{exotic}", "value")
+#         for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State("input_B_call_barrier", "value"),
+#         State("input_B_put_barrier", "value"),
+#     ],
+# )
+# def update_greeks(*args):
+#     """
+#     Callback to compute and display Greek values (Delta, Gamma, Theta, Vega, Rho)
+#     for multiple exotic options dynamically.
+
+#     Parameters:
+#         args: Dynamically passed inputs and states.
+
+#     Returns:
+#         tuple: Greek values for calls and puts for all exotic options.
+#     """
+
+
+#     n_exotics = len(EXOTIC_OPTION_TYPES)
+#     n_greeks = len(GREEKS)
+#     n_clicks = args[:n_exotics]  # Button clicks for each exotic type
+#     states = args[n_exotics:-2]  # Exclude barrier-specific inputs (last two states)
+#     B_call, B_put = args[-2], args[-1]  # Barrier-specific inputs
+
+#     # Reshape states for each exotic option type
+#     split_states = [states[i::n_exotics] for i in range(n_exotics)]
+
+#     results = []
+
+#     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
+#         if clicks > 0 and Z_precomputed is not None:
+#             S0, K, T, r, sigma = state
+#             h = H
+
+#             if exotic == "barrier":
+
+#                 # Compute Greeks for barrier 
+#                 deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+#                 gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+#                 thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+#                 vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+#                 rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
+                
+#             else:    
+#                 # Compute Greeks
+#                 deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+#                 gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+#                 thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+#                 vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+#                 rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+
+#             # Append results for call and put values
+#             results.extend([
+#                 html.Div(f"{deltas['delta_call']:.2f}"),  # Delta Call
+#                 html.Div(f"{deltas['delta_put']:.2f}"),   # Delta Put
+
+#                 html.Div(f"{gammas['gamma_call']:.2f}"),  # Gamma Call
+#                 html.Div(f"{gammas['gamma_put']:.2f}"),   # Gamma Put
+
+#                 html.Div(f"{thetas['theta_call']:.2f}"),       # Theta Call
+#                 html.Div(f"{thetas['theta_put']:.2f}"),        # Theta Put
+
+#                 html.Div(f"{vegas['vega_call']:.2f}"),    # Vega Call
+#                 html.Div(f"{vegas['vega_put']:.2f}"),     # Vega Put
+
+#                 html.Div(f"{rhos['rho_call']:.2f}"),      # Rho Call
+#                 html.Div(f"{rhos['rho_put']:.2f}"),       # Rho Put
+#             ])
+
+#         else:
+#             # Empty values for all Greeks (call and put)
+#             results.extend([html.Div('') for _ in range(n_greeks * 2)])
+
+#     return tuple(results) # TODO: in this callback, also ouptu the results in the greek table
+
 @app.callback(
     [
+        # Outputs for divs displaying Greeks
         Output(f"{greek}_{option_type}_{exotic}", "children")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
         for option_type in ["call", "put"]
+    ] +
+    [
+        # Outputs for the Greek table values
+        Output(f"value_{greek}_{exotic}_call", "children")
+        for exotic in EXOTIC_OPTION_TYPES
+        for greek in GREEKS
+    ] +
+    [
+        Output(f"value_{greek}_{exotic}_put", "children")
+        for exotic in EXOTIC_OPTION_TYPES
+        for greek in GREEKS
     ],
     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
     [
@@ -206,15 +316,14 @@ def show_plot_first_n_simulations(*args):
 def update_greeks(*args):
     """
     Callback to compute and display Greek values (Delta, Gamma, Theta, Vega, Rho)
-    for multiple exotic options dynamically.
+    for multiple exotic options dynamically, and populate the Greek table.
 
     Parameters:
         args: Dynamically passed inputs and states.
 
     Returns:
-        tuple: Greek values for calls and puts for all exotic options.
+        tuple: Greek values for divs and table cells for calls and puts for all exotic options.
     """
-
 
     n_exotics = len(EXOTIC_OPTION_TYPES)
     n_greeks = len(GREEKS)
@@ -225,7 +334,9 @@ def update_greeks(*args):
     # Reshape states for each exotic option type
     split_states = [states[i::n_exotics] for i in range(n_exotics)]
 
-    results = []
+    div_results = []
+    table_call_results = []
+    table_put_results = []
 
     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
         if clicks > 0 and Z_precomputed is not None:
@@ -233,46 +344,57 @@ def update_greeks(*args):
             h = H
 
             if exotic == "barrier":
-
-                # Compute Greeks for barrier 
-                deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-                gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-                thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-                vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-                rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-                
-            else:    
-                # Compute Greeks
+                # Compute Greeks for barrier options
+                deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+                gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+                thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+                vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+                rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+            else:
+                # Compute Greeks for other options
                 deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
                 gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic)
                 thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
                 vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic)
                 rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic)
 
-            # Append results for call and put values
-            results.extend([
-                html.Div(f"{deltas['delta_call']:.2f}"),  # Delta Call
-                html.Div(f"{deltas['delta_put']:.2f}"),   # Delta Put
-
-                html.Div(f"{gammas['gamma_call']:.2f}"),  # Gamma Call
-                html.Div(f"{gammas['gamma_put']:.2f}"),   # Gamma Put
-
-                html.Div(f"{thetas['theta_call']:.2f}"),       # Theta Call
-                html.Div(f"{thetas['theta_put']:.2f}"),        # Theta Put
-
-                html.Div(f"{vegas['vega_call']:.2f}"),    # Vega Call
-                html.Div(f"{vegas['vega_put']:.2f}"),     # Vega Put
-
-                html.Div(f"{rhos['rho_call']:.2f}"),      # Rho Call
-                html.Div(f"{rhos['rho_put']:.2f}"),       # Rho Put
+            # Append results for divs
+            div_results.extend([
+                html.Div(f"{deltas['delta_call']:.2f}"),
+                html.Div(f"{deltas['delta_put']:.2f}"),
+                html.Div(f"{gammas['gamma_call']:.2f}"),
+                html.Div(f"{gammas['gamma_put']:.2f}"),
+                html.Div(f"{thetas['theta_call']:.2f}"),
+                html.Div(f"{thetas['theta_put']:.2f}"),
+                html.Div(f"{vegas['vega_call']:.2f}"),
+                html.Div(f"{vegas['vega_put']:.2f}"),
+                html.Div(f"{rhos['rho_call']:.2f}"),
+                html.Div(f"{rhos['rho_put']:.2f}"),
             ])
 
+            # Append results for the table (call and put separately)
+            table_call_results.extend([
+                f"{deltas['delta_call']:.2f}",
+                f"{gammas['gamma_call']:.2f}",
+                f"{thetas['theta_call']:.2f}",
+                f"{vegas['vega_call']:.2f}",
+                f"{rhos['rho_call']:.2f}",
+            ])
+            table_put_results.extend([
+                f"{deltas['delta_put']:.2f}",
+                f"{gammas['gamma_put']:.2f}",
+                f"{thetas['theta_put']:.2f}",
+                f"{vegas['vega_put']:.2f}",
+                f"{rhos['rho_put']:.2f}",
+            ])
         else:
-            # Empty values for all Greeks (call and put)
-            results.extend([html.Div('') for _ in range(n_greeks * 2)])
+            # Empty values for divs and table
+            div_results.extend([html.Div('') for _ in range(n_greeks * 2)])
+            table_call_results.extend(['' for _ in range(n_greeks)])
+            table_put_results.extend(['' for _ in range(n_greeks)])
 
-    return tuple(results) # TODO: in this callback, also ouptu the results in the greek table
-
+    # Combine results for divs and table
+    return tuple(div_results + table_call_results + table_put_results)
 
 
 @app.callback(
