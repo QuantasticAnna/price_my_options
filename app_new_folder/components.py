@@ -147,7 +147,7 @@ def generate_greek_table(exotic_option_type):
     ])
 
 # Option pricing table
-def generate_option_pricing_table(exotic_option_type):
+def generate_option_prices_table(exotic_option_type):
     return html.Div([
         html.H4(f"{exotic_option_type.capitalize()} Option Prices", className="text-center text-light"),
         dbc.Table([
@@ -263,35 +263,6 @@ def generate_greeks_accordion(exotic_option_type):
     ], start_collapsed=True, always_open=True)
 
 
-# def generate_main_div(exotic_option_type):
-#     """
-#     Generates the main Div for a given exotic option type.
-
-#     Parameters:
-#         exotic_option_type (str): The type of exotic option (e.g., 'asian', 'lookback').
-
-#     Returns:
-#         html.Div: A Div containing the full layout for the specified exotic option type.
-#     """
-#     return html.Div([
-#         html.H4(f"{exotic_option_type.capitalize()} Options", style={'margin': '20px'}),
-#         dbc.Row([
-#             dbc.Col(html.Div(dcc.Graph(id=f"plot_first_n_simulations_{exotic_option_type}", style={"height": "700px"})), width=8),
-#             dbc.Col([
-#                 dbc.Row([
-#                     dbc.Col(generate_input_table(exotic_option_type)),
-#                     dbc.Col(generate_greek_table(exotic_option_type))
-#                 ]),
-#                 dbc.Row(generate_option_pricing_table(exotic_option_type)),
-#                 dbc.Row(html.Div(html.Button("Update Parameters", 
-#                                             id=f"button_update_params_{exotic_option_type}", 
-#                                             n_clicks=0, 
-#                                             className="btn btn-primary mt-3"),
-#                                  style={"textAlign": "center"},))
-#             ])
-#         ]),
-#         dbc.Row([generate_greeks_accordion(exotic_option_type)])
-#     ], id=f"div_{exotic_option_type}")
 
 
 def generate_main_div(exotic_option_type):
@@ -345,7 +316,7 @@ def generate_main_div(exotic_option_type):
                 ]),
                 # Add the barrier-specific table if the option type is "barrier"
                 dbc.Row(barrier_table) if barrier_table else None,
-                dbc.Row(generate_option_pricing_table(exotic_option_type)),
+                dbc.Row(generate_option_prices_table(exotic_option_type)),
                 dbc.Row(html.Div(html.Button("Update Parameters", 
                                             id=f"button_update_params_{exotic_option_type}", 
                                             n_clicks=0, 

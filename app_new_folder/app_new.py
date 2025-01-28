@@ -3,14 +3,14 @@ import dash_bootstrap_components as dbc
 import numpy as np
 import dash_mantine_components as dmc
 import joblib
-from pricer.asian import plotter_asian  # should be in ascript plotter
-from pricer.lookback import plotter_lookback
-from pricer.barrier import plotter_barrier
-from pricer.european import plotter_european
+from pricer.asian import pricer_asian, plotter_asian  # should be in ascript plotter
+from pricer.lookback import pricer_lookback, plotter_lookback
+from pricer.barrier import pricer_barrier, plotter_barrier
+from pricer.european import pricer_european, plotter_european
 from pricer.monte_carlo import monte_carlo_simulations
 import plotly.graph_objects as go
 from app_new_folder.components import generate_main_div, empty_fig  # Import reusable components
-from constants import H, S0_RANGE, K_RANGE, B_CALL, B_PUT, N_SIMULATIONS
+from constants import H, S0_RANGE, K_RANGE, B_CALL, B_PUT, N_SIMULATIONS, pricer_mapping
 from greeks.delta import compute_delta
 from greeks.gamma import compute_gamma
 from greeks.vega import compute_vega
@@ -173,106 +173,6 @@ def show_plot_first_n_simulations(*args):
 
 
 
-
-
-# @app.callback(
-#     [
-#         Output(f"{greek}_{option_type}_{exotic}", "children")
-#         for exotic in EXOTIC_OPTION_TYPES
-#         for greek in GREEKS
-#         for option_type in ["call", "put"]
-#     ],
-#     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
-#     [
-#         State(f"input_S0_{exotic}", "value")
-#         for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_K_{exotic}", "value")
-#         for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_T_{exotic}", "value")
-#         for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_r_{exotic}", "value")
-#         for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_sigma_{exotic}", "value")
-#         for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State("input_B_call_barrier", "value"),
-#         State("input_B_put_barrier", "value"),
-#     ],
-# )
-# def update_greeks(*args):
-#     """
-#     Callback to compute and display Greek values (Delta, Gamma, Theta, Vega, Rho)
-#     for multiple exotic options dynamically.
-
-#     Parameters:
-#         args: Dynamically passed inputs and states.
-
-#     Returns:
-#         tuple: Greek values for calls and puts for all exotic options.
-#     """
-
-
-#     n_exotics = len(EXOTIC_OPTION_TYPES)
-#     n_greeks = len(GREEKS)
-#     n_clicks = args[:n_exotics]  # Button clicks for each exotic type
-#     states = args[n_exotics:-2]  # Exclude barrier-specific inputs (last two states)
-#     B_call, B_put = args[-2], args[-1]  # Barrier-specific inputs
-
-#     # Reshape states for each exotic option type
-#     split_states = [states[i::n_exotics] for i in range(n_exotics)]
-
-#     results = []
-
-#     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
-#         if clicks > 0 and Z_precomputed is not None:
-#             S0, K, T, r, sigma = state
-#             h = H
-
-#             if exotic == "barrier":
-
-#                 # Compute Greeks for barrier 
-#                 deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-#                 gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-#                 thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-#                 vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-#                 rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call = B_call, B_put = B_put)
-                
-#             else:    
-#                 # Compute Greeks
-#                 deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-#                 gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-#                 thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-#                 vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-#                 rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-
-#             # Append results for call and put values
-#             results.extend([
-#                 html.Div(f"{deltas['delta_call']:.2f}"),  # Delta Call
-#                 html.Div(f"{deltas['delta_put']:.2f}"),   # Delta Put
-
-#                 html.Div(f"{gammas['gamma_call']:.2f}"),  # Gamma Call
-#                 html.Div(f"{gammas['gamma_put']:.2f}"),   # Gamma Put
-
-#                 html.Div(f"{thetas['theta_call']:.2f}"),       # Theta Call
-#                 html.Div(f"{thetas['theta_put']:.2f}"),        # Theta Put
-
-#                 html.Div(f"{vegas['vega_call']:.2f}"),    # Vega Call
-#                 html.Div(f"{vegas['vega_put']:.2f}"),     # Vega Put
-
-#                 html.Div(f"{rhos['rho_call']:.2f}"),      # Rho Call
-#                 html.Div(f"{rhos['rho_put']:.2f}"),       # Rho Put
-#             ])
-
-#         else:
-#             # Empty values for all Greeks (call and put)
-#             results.extend([html.Div('') for _ in range(n_greeks * 2)])
-
-#     return tuple(results) # TODO: in this callback, also ouptu the results in the greek table
-
 @app.callback(
     [
         # Outputs for divs displaying Greeks
@@ -291,6 +191,15 @@ def show_plot_first_n_simulations(*args):
         Output(f"value_{greek}_{exotic}_put", "children")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
+    ] +
+    [
+        # Outputs for the Option Prices table
+        Output(f"price_call_{exotic}", "children")
+        for exotic in EXOTIC_OPTION_TYPES
+    ] +
+    [
+        Output(f"price_put_{exotic}", "children")
+        for exotic in EXOTIC_OPTION_TYPES
     ],
     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
     [
@@ -313,16 +222,16 @@ def show_plot_first_n_simulations(*args):
         State("input_B_put_barrier", "value"),
     ],
 )
-def update_greeks(*args):
+def update_greeks_and_prices(*args):
     """
     Callback to compute and display Greek values (Delta, Gamma, Theta, Vega, Rho)
-    for multiple exotic options dynamically, and populate the Greek table.
+    and Option Prices for multiple exotic options dynamically.
 
     Parameters:
         args: Dynamically passed inputs and states.
 
     Returns:
-        tuple: Greek values for divs and table cells for calls and puts for all exotic options.
+        tuple: Greek values and prices for calls and puts for all exotic options.
     """
 
     n_exotics = len(EXOTIC_OPTION_TYPES)
@@ -337,12 +246,22 @@ def update_greeks(*args):
     div_results = []
     table_call_results = []
     table_put_results = []
+    price_call_results = []
+    price_put_results = []
+
+    
 
     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
+
         if clicks > 0 and Z_precomputed is not None:
             S0, K, T, r, sigma = state
             h = H
+            Z = np.array(Z_precomputed)  
+            S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)  #NOTE here we call monte_carlo simulation again, should be called once only at maximum 
 
+            pricer = pricer_mapping.get(exotic)
+
+            # Compute Greeks and Prices
             if exotic == "barrier":
                 # Compute Greeks for barrier options
                 deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
@@ -350,6 +269,9 @@ def update_greeks(*args):
                 thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
                 vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
                 rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+
+                # Compute Option Prices
+                prices = pricer(S, K, T, r, B_call=B_call, B_put=B_put)
             else:
                 # Compute Greeks for other options
                 deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
@@ -357,6 +279,9 @@ def update_greeks(*args):
                 thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
                 vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic)
                 rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+
+                # Compute Option Prices
+                prices = pricer(S, K, T, r)
 
             # Append results for divs
             div_results.extend([
@@ -372,7 +297,7 @@ def update_greeks(*args):
                 html.Div(f"{rhos['rho_put']:.2f}"),
             ])
 
-            # Append results for the table (call and put separately)
+            # Append results for the Greek table
             table_call_results.extend([
                 f"{deltas['delta_call']:.2f}",
                 f"{gammas['gamma_call']:.2f}",
@@ -387,14 +312,23 @@ def update_greeks(*args):
                 f"{vegas['vega_put']:.2f}",
                 f"{rhos['rho_put']:.2f}",
             ])
+
+            # Append results for the Prices table
+            price_call_results.append(f"{prices['price_call']:.2f}")
+            price_put_results.append(f"{prices['price_put']:.2f}")
         else:
-            # Empty values for divs and table
+            # Empty values for divs, table, and prices
             div_results.extend([html.Div('') for _ in range(n_greeks * 2)])
             table_call_results.extend(['' for _ in range(n_greeks)])
             table_put_results.extend(['' for _ in range(n_greeks)])
+            price_call_results.append('')
+            price_put_results.append('')
 
-    # Combine results for divs and table
-    return tuple(div_results + table_call_results + table_put_results)
+    # Combine results for divs, Greek table, and Prices table
+    return tuple(div_results + table_call_results + table_put_results + price_call_results + price_put_results)
+
+
+
 
 
 @app.callback(
