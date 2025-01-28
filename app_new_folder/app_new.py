@@ -21,7 +21,7 @@ from greeks.greeks_functions import plot_greek_vs_stock_price, plot_greek_vs_str
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css"], )
 
-app.title = "Price My Options NEW"
+app.title = "Price My Options"
 
 # Load precomputed Z
 Z_precomputed = joblib.load("Z_precomputed.joblib")
@@ -59,11 +59,12 @@ menu_bar = html.Div([
 div_asian = generate_main_div("asian")
 div_lookback = generate_main_div("lookback")
 div_barrier = generate_main_div("barrier")
-div_european = generate_main_div("european")
+div_european = html.Div([html.H1(' NOTE: For european div, include BS pricing'),
+                         generate_main_div("european")])
 
 # Define the app layout
 app.layout = html.Div([
-    html.H1("Price My Options NEW", style={"textAlign": "center", "margin-top": "20px"}),
+    html.H1("Price My Options", style={"textAlign": "center", "margin-top": "20px"}),
     menu_bar,
     div_asian,
     div_lookback,
