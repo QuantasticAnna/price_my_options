@@ -194,7 +194,7 @@ def show_plot_first_n_simulations(*args):
         if clicks > 0 and Z_precomputed is not None:
             S0, K, T, r, sigma = state
             Z = np.array(Z_precomputed)  # Convert Z back to NumPy array
-            S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=100000)
+            S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=50000)
 
             if exotic == "barrier":
                 if B_call is None or B_put is None:

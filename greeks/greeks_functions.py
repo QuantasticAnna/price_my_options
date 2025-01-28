@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 from greeks.greeks_map import greeks_mapping
 from custom_templates import cyborg_template
 import numpy as np
+import datetime 
 
 
 def greek_vs_stock_price(Z: np.ndarray, 
@@ -292,7 +293,7 @@ if __name__ == "__main__":
     S0 = 100
     volatilities = np.array([0.1, 0.2, 0.3])  # Volatility range (as ndarray)
     sigma = 0.1
-    Z = np.random.standard_normal((100000, 252))  # Precomputed random normals
+    Z = np.random.standard_normal((10000, 252))  # Precomputed random normals
     K = 100  # Strike price
     K_range = np.linspace(50, 150, 20)  # Strike price range (as ndarray)
     T = 1  # Time to maturity (in years)
@@ -301,8 +302,10 @@ if __name__ == "__main__":
     exotic_type = "asian"  # Exotic option type
     greek = 'delta'
 
-    # results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, greek)
-
+    print(datetime.datetime.now())
+    results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, greek)
+    print(datetime.datetime.now())
+    print('------------------')
     # plot_stock = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, greek)
     # plot_stock.show()
 

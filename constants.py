@@ -35,8 +35,8 @@ TTM_ARRAY_VEGA = np.array([0.0198, 0.0992, 0.3968, 0.9999], dtype=float)  #for s
 
 H = 0.01
 
-K_RANGE = np.linspace(50, 150, 10)  # should be flexible around strike price (here we assume its 100)
-S0_RANGE = np.linspace(50, 150, 10) # should be flexible around stock price (here we assume its 100)
+K_RANGE = np.linspace(50, 150, 20)  # should be flexible around strike price (here we assume its 100)
+S0_RANGE = np.linspace(50, 150, 30) # should be flexible around stock price (here we assume its 100)
 
 EXOTIC_TYPE = 'asian'
 
