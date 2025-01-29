@@ -15,7 +15,7 @@ Asian options are path-dependent options where the payoff depends on the average
 
 ---
 
-## 2. Barrier Options NEXT TODO
+## 2. Barrier Options DONE
 Barrier options are options that are activated (knock-in) or deactivated (knock-out) if the underlying asset reaches a specific barrier price during the option's life.
 
 - **Down-and-Out Call Option**:

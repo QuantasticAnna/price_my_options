@@ -1,7 +1,8 @@
 import numpy as np
 import plotly.graph_objects as go
-from pricer.monte_carlo import plotter_first_n_simulations, monte_carlo_simulations
+from pricer.monte_carlo import plotter_first_n_simulations, monte_carlo_simulations, monte_carlo_simulations_heston
 from custom_templates import cyborg_template
+import datetime
 
 def pricer_asian(S, K, T, r): #! at some point, add the option arithmetic / geometric for mean computation 
     """
@@ -120,10 +121,24 @@ if __name__ == '__main__':
     # Simulate Asian option payoffs
     S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations)
 
-    print(100 - 100*np.exp(-0.05))
+    S_heston = monte_carlo_simulations_heston(
+        Z, S0=100, T=1, r=0.05, v0=0.04, 
+        kappa=2.0, theta=0.04, xi=0.3, rho=-0.7
+    )
+
+    print(datetime.datetime.now())
 
     # Plot 
     # Get the base plot from the other function
-    fig = plotter_first_n_simulations(S, n_sim_to_plot)
+    # fig = plotter_first_n_simulations(S, n_sim_to_plot)
     fig_asian = plotter_asian(S, n_sim_to_plot=10)
     fig_asian.show()
+
+    prices_heston = pricer_asian(S_heston, 100, T, r)
+    fig_asian_heston = plotter_asian(S_heston, n_sim_to_plot=10)
+    
+    fig_asian_heston.show()
+
+    print(datetime.datetime.now())
+
+    print('-----------------')

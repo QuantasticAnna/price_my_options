@@ -9,7 +9,7 @@ from pricer.barrier import pricer_barrier, plotter_barrier
 from pricer.european import pricer_european, plotter_european
 from pricer.monte_carlo import monte_carlo_simulations
 import plotly.graph_objects as go
-from app_new_folder.components import generate_main_div, empty_fig  # Import reusable components
+from app_new_folder.components import generate_main_div, empty_fig, div_models  # Import reusable components
 from constants import H, S0_RANGE, K_RANGE, B_CALL, B_PUT, N_SIMULATIONS, pricer_mapping, TTM_RANGE
 from greeks.delta import compute_delta
 from greeks.gamma import compute_gamma
@@ -46,6 +46,7 @@ menu_bar = html.Div([
         value="asian",
         fullWidth=True,
         data=[
+            {"value": "models", "label": "Models"},
             {"value": "asian", "label": "Asian"},
             {"value": "lookback", "label": "Lookback"},
             {"value": "barrier", "label": "Barrier"},
@@ -66,6 +67,7 @@ div_european = html.Div([html.H1(' NOTE: For european div, include BS pricing'),
 app.layout = html.Div([
     html.H1("Price My Options", style={"textAlign": "center", "margin-top": "20px"}),
     menu_bar,
+    div_models,
     div_asian,
     div_lookback,
     div_barrier,
@@ -74,7 +76,8 @@ app.layout = html.Div([
 
 # Callback to toggle visibility of divs based on the menu bar selection
 @app.callback(
-    [Output('div_asian', 'hidden'),
+    [Output('div_models', 'hidden'), 
+     Output('div_asian', 'hidden'),
      Output('div_lookback', 'hidden'),
      Output('div_barrier', 'hidden'),
      Output('div_european', 'hidden')],
@@ -82,12 +85,15 @@ app.layout = html.Div([
 )
 def show_hidden_div(input_value):
     # Default all divs to hidden
+    show_div_models = True
     show_div_asian = True
     show_div_lookback = True
     show_div_barrier = True
     show_div_european = True
 
     # Show only the selected div
+    if input_value == 'models':
+        show_div_models = False
     if input_value == 'asian':
         show_div_asian = False
     elif input_value == 'lookback':
@@ -97,7 +103,7 @@ def show_hidden_div(input_value):
     elif input_value == 'european':
         show_div_european = False
 
-    return show_div_asian, show_div_lookback, show_div_barrier, show_div_european
+    return show_div_models, show_div_asian, show_div_lookback, show_div_barrier, show_div_european
 
 
 
