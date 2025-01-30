@@ -1,21 +1,6 @@
 import numpy as np
-from pricer.asian import pricer_asian
 from pricer.monte_carlo import monte_carlo_simulations
-import matplotlib.pyplot as plt
 from constants import pricer_mapping
-from custom_templates import cyborg_template
-import plotly.graph_objects as go
-
-
-# TODO: 
-    # compute_rho
-    # rho_vs_stock_price
-    # rho_vs_ttm
-    # rho_vs_vola
-    # plot_rho_vs_stock_price
-    # plot_3d_rho_vs_diff_implied_vol
-    # plot_3d_rho_over_time
-
 
 def compute_rho(Z: np.ndarray, 
                 S0: float,

@@ -1,10 +1,6 @@
 import numpy as np
 import plotly.graph_objects as go
-from pricer.monte_carlo import plotter_first_n_simulations, monte_carlo_simulations
-
-
-## Not complete: 
-    # we can specifiy also 'above range', 'below range' 'in range' and chekc out to differenceita call and puts here
+from pricer.monte_carlo import monte_carlo_simulations
 
 def pricer_range(S, K, T, r, lower_bound, upper_bound):
     """

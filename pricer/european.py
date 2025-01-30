@@ -1,6 +1,6 @@
 import numpy as np
 import plotly.graph_objects as go
-from pricer.monte_carlo import plotter_first_n_simulations, monte_carlo_simulations
+from pricer.monte_carlo import monte_carlo_simulations
 from custom_templates import cyborg_template
 
 

@@ -1,6 +1,6 @@
 import numpy as np
 import plotly.graph_objects as go
-from pricer.monte_carlo import plotter_first_n_simulations, monte_carlo_simulations, monte_carlo_simulations_heston
+from pricer.monte_carlo import monte_carlo_simulations, monte_carlo_simulations_heston
 from custom_templates import cyborg_template
 import datetime
 
@@ -65,16 +65,6 @@ def plotter_asian(S: np.ndarray,
             name=f'Simulation {i+1}',
             showlegend=True
         ))
-
-        # Marker for the maximum price
-
-    # # Layout settings
-    # fig.update_layout(
-    #     title=f"First {n_sim_to_plot} Monte Carlo Simulations of Stock Prices",
-    #     xaxis_title="Time Steps",
-    #     yaxis_title="Stock Price",
-    #     template="plotly_white"
-    # )
 
     # Access the colors used in the base plot
     colors = [trace.line.color for trace in fig.data if trace.mode == 'lines']

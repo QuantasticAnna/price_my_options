@@ -1,12 +1,3 @@
-# Functions common to all greeks, that Im gonna re factor to avoid code duplciation 
-
-# For each greek: compute_greek (specific)
-# General: 
-#   delta_vs_stock_price, 
-#   delta_vs_strike_price, 
-#   plot_delta_vs_stock_price,
-#   plot_delta_vs_strike_price
-
 import plotly.graph_objects as go
 from greeks.greeks_map import greeks_mapping
 from custom_templates import cyborg_template
@@ -638,21 +629,6 @@ if __name__ == "__main__":
     print(datetime.datetime.now())
 
 
-
-    # results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, greek)
-
-    # plot_stock = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, greek)
-    # plot_stock.show()
-
-    # # results_strike = greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic_type, greek)
-    # plot_strike = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic_type, greek)
-    # plot_strike.show()
-
-
-    # # Plot Greek vs Time to Maturity
-    # fig = plot_greek_vs_ttm(Z, S0, K, T_range, r, sigma, h, exotic_type, greek)
-    # fig.show()
-
     fig = plot_greek_vs_volatility(Z, S0, K, T, r, sigma_range, h, exotic_type, greek)
     fig.show()
 
@@ -660,4 +636,4 @@ if __name__ == "__main__":
     print('------------------')
 
 
-# Note: no books I ever saw plots greek vs volatility actually shown 
+# Note: Plot greek vs volatility useful? 

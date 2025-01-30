@@ -1,6 +1,5 @@
 import numpy as np
 import plotly.graph_objects as go
-import datetime
 
 
 def monte_carlo_simulations(Z: np.ndarray, # Z is an input of monte carlo, so we define it once, for all the application 

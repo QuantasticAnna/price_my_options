@@ -9,8 +9,8 @@ from pricer.barrier import pricer_barrier, plotter_barrier
 from pricer.european import pricer_european, plotter_european
 from pricer.monte_carlo import monte_carlo_simulations
 import plotly.graph_objects as go
-from app_new_folder.components import generate_main_div, empty_fig  # Import reusable components
-from app_new_folder.components_model_div import  div_models
+from app_folder.components import generate_main_div, empty_fig  # Import reusable components
+from app_folder.components_model_div import  div_models
 from constants import H, S0_RANGE, K_RANGE, B_CALL, B_PUT, N_SIMULATIONS, pricer_mapping, TTM_RANGE
 from greeks.delta import compute_delta
 from greeks.gamma import compute_gamma

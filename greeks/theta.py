@@ -1,20 +1,6 @@
 import numpy as np
-from pricer.asian import pricer_asian
 from pricer.monte_carlo import monte_carlo_simulations
-import matplotlib.pyplot as plt
 from constants import pricer_mapping
-from custom_templates import cyborg_template
-import plotly.graph_objects as go
-
-# TODO: 
-    # compute_theta
-    # theta_vs_stock_price
-    # theta_vs_ttm
-    # theta_vs_vola
-    # plot_theta_vs_stock_price
-    # plot_3d_theta_vs_diff_implied_vol
-    # plot_3d_theta_over_time
-
 
 def compute_theta(Z: np.ndarray, 
                   S0: float,
