@@ -1,17 +1,13 @@
-from dash import Dash, Input, Output, html, dcc, State, callback_context
+from dash import Dash, Input, Output, html, State, callback_context
 import dash_bootstrap_components as dbc
 import numpy as np
 import dash_mantine_components as dmc
 import joblib
-from pricer.asian import pricer_asian, plotter_asian  # should be in ascript plotter
-from pricer.lookback import pricer_lookback, plotter_lookback
-from pricer.barrier import pricer_barrier, plotter_barrier
-from pricer.european import pricer_european, plotter_european
-from pricer.monte_carlo import monte_carlo_simulations
+from pricer_plotter.monte_carlo import monte_carlo_simulations
 import plotly.graph_objects as go
 from app_folder.components import generate_main_div, empty_fig  # Import reusable components
 from app_folder.components_model_div import  div_models
-from constants import H, S0_RANGE, K_RANGE, B_CALL, B_PUT, N_SIMULATIONS, pricer_mapping, TTM_RANGE
+from constants import H, S0_RANGE, K_RANGE, N_SIMULATIONS, PRICER_MAPPING, TTM_RANGE, EXOTIC_OPTION_TYPES, GREEKS, PLOTTERS
 from greeks.delta import compute_delta
 from greeks.gamma import compute_gamma
 from greeks.vega import compute_vega
@@ -27,18 +23,8 @@ app.title = "Price My Options"
 # Load precomputed Z
 Z_precomputed = joblib.load("Z_precomputed.joblib")
 
-# Exotic options dynamically retrieved from menu_bar
-EXOTIC_OPTION_TYPES = ["asian", "lookback", "barrier", "european"] 
 
-GREEKS = ["delta", "gamma", "theta", "vega", "rho"]
 
-# Dictionary of exotic option types and their corresponding plotters
-PLOTTERS = {
-    "asian": plotter_asian,
-    "lookback": plotter_lookback,
-    "barrier": plotter_barrier,
-    "european": plotter_european,
-}
 
 # Menu bar for selecting exotic options
 menu_bar = html.Div([
@@ -157,6 +143,7 @@ def show_plot_first_n_simulations(*args):
                 if B_call is None or B_put is None:
                     figures.append(empty_fig)  # Return empty figure if barriers are missing
                     continue
+                plotter_barrier = PLOTTERS.get(exotic)
                 fig_call, fig_put = plotter_barrier(S, B_call, B_put, n_sim_to_plot=10)
                 figures.append(fig_call)  # Append Down-and-Out Call plot
                 # Uncomment below if Up-and-Out Put is in the layout
@@ -267,7 +254,7 @@ def update_greeks_and_prices(*args):
             Z = np.array(Z_precomputed)  
             S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)  #NOTE here we call monte_carlo simulation again, should be called once only at maximum 
 
-            pricer = pricer_mapping.get(exotic)
+            pricer = PRICER_MAPPING.get(exotic)
 
             # Compute Greeks and Prices
             if exotic == "barrier":

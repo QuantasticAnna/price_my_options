@@ -1,6 +1,6 @@
 import numpy as np
 from pricer.monte_carlo import monte_carlo_simulations
-from constants import pricer_mapping
+from constants import PRICER_MAPPING
 
 def compute_rho(Z: np.ndarray, 
                 S0: float,
@@ -32,7 +32,7 @@ def compute_rho(Z: np.ndarray,
               {'rho_call': rho_call, 'rho_put': rho_put}.
     """
     # Fetch the pricer from the mapping
-    pricer = pricer_mapping.get(exotic_type)
+    pricer = PRICER_MAPPING.get(exotic_type)
     if pricer is None:
         raise ValueError(f"Unsupported exotic_type: {exotic_type}")
     

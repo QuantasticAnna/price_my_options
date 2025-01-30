@@ -1,17 +1,17 @@
-from pricer.asian import pricer_asian
-from pricer.barrier import pricer_barrier
-from pricer.binary import pricer_binary
-from pricer.lookback import pricer_lookback
-from pricer.range import pricer_range
-from pricer.cliquet import pricer_cliquet
-from pricer.european import pricer_european
+from pricer.asian import pricer_asian, plotter_asian
+from pricer.barrier import pricer_barrier, plotter_barrier
+from pricer.binary import pricer_binary, plotter_binary
+from pricer.lookback import pricer_lookback, plotter_lookback
+from pricer.range import pricer_range, plotter_range
+from pricer.cliquet import pricer_cliquet, plotter_cliquet
+from pricer.european import pricer_european, plotter_european
 
 
 
 import numpy as np
 
 # Mapping of exotic option types to their respective pricers
-pricer_mapping = {
+PRICER_MAPPING = {
     'asian': pricer_asian,
     'barrier': pricer_barrier,
     'binary': pricer_binary,
@@ -49,3 +49,18 @@ B_PUT = 110
 N_SIMULATIONS = 100000
 
 TTM_RANGE = np.linspace(0.1, 1, 10)
+
+
+# Exotic options dynamically retrieved from menu_bar
+EXOTIC_OPTION_TYPES = ["asian", "lookback", "barrier", "european"] 
+
+GREEKS = ["delta", "gamma", "theta", "vega", "rho"]
+
+
+# Dictionary of exotic option types and their corresponding plotters
+PLOTTERS = {
+    "asian": plotter_asian,
+    "lookback": plotter_lookback,
+    "barrier": plotter_barrier,
+    "european": plotter_european,
+}

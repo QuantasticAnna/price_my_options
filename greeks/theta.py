@@ -1,6 +1,6 @@
 import numpy as np
 from pricer.monte_carlo import monte_carlo_simulations
-from constants import pricer_mapping
+from constants import PRICER_MAPPING
 
 def compute_theta(Z: np.ndarray, 
                   S0: float,
@@ -31,7 +31,7 @@ def compute_theta(Z: np.ndarray,
         dict: Theta for call and put options.
     """
     # Fetch the pricer from the mapping
-    pricer = pricer_mapping.get(exotic_type)
+    pricer = PRICER_MAPPING.get(exotic_type)
     if pricer is None:
         raise ValueError(f"Unsupported exotic_type: {exotic_type}")
 
