@@ -58,12 +58,11 @@ menu_bar = html.Div([
 ])
 
 
-# Generate divs for exotic options
+# Generate divs for exotic options  #PB: during initial load, this function is called, so we can see the loading spinners
 div_asian = generate_main_div("asian")
 div_lookback = generate_main_div("lookback")
 div_barrier = generate_main_div("barrier")
-div_european = html.Div([html.H1(' NOTE: For european div, include BS pricing'),
-                         generate_main_div("european")])
+div_european = generate_main_div("european")
 
 # Define the app layout
 app.layout = html.Div([

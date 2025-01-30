@@ -45,6 +45,10 @@ from custom_templates import cyborg_template
 empty_fig = go.Figure().update_layout(margin=dict(l=50, r=50, t=50, b=50),
                                       template=cyborg_template)
 
+OVERLAY_STYLE = {"visibility":"visible", 
+                 "filter": "blur(3px) brightness(70%) grayscale(50%)",
+                 "backgroundColor": "#FFFFFF"}
+
 def generate_input_table(exotic_option_type):
     """
     Generates the input table for exotic option parameters.
@@ -100,16 +104,13 @@ def generate_input_table(exotic_option_type):
         )
     ])
 
+
+
 def generate_greek_table(exotic_option_type):
     return html.Div([
         html.H4(f"{exotic_option_type.capitalize()} Option Greeks", className="text-center text-light"),
 
-            # Loading spinner wraps the entire table
-        dcc.Loading(
-            type="default",  # Default spinner
-            children=
-
-        dbc.Table([
+        dcc.Loading([dbc.Table([
             html.Thead(html.Tr([
                 html.Th("Greek", className="text-light", style={"width": "50%"}),
                 html.Th("Call", className="text-light", style={"width": "25%"}),
@@ -148,19 +149,25 @@ def generate_greek_table(exotic_option_type):
             hover=True,
             responsive=True,
             striped=True,
-            style={"margin-top": "20px"}
-        ))
+            # style={"margin-top": "20px"}
+        )], 
+            overlay_style=OVERLAY_STYLE, 
+            type='circle', 
+            color='#a11bf5')
     ])
+
+
+
+
+
+
 
 # Option pricing table
 def generate_option_prices_table(exotic_option_type):
     return html.Div([
         html.H4(f"{exotic_option_type.capitalize()} Option Prices", className="text-center text-light"),
 
-            # Loading spinner wraps the entire table
-        dcc.Loading(
-            type="default",  # Default spinner
-            children=dbc.Table([
+            dcc.Loading([dbc.Table([
                     html.Thead(html.Tr([
                         html.Th("Option", className="text-light", style={"width": "70%"}),  # Option column
                         html.Th("Price", className="text-light", style={"width": "30%"}),  # Price column
@@ -181,10 +188,15 @@ def generate_option_prices_table(exotic_option_type):
             hover=True,
             responsive=True,
             striped=True,
-            style={"margin-top": "20px"}
+            
+        )], 
+            overlay_style=OVERLAY_STYLE, 
+            type='circle', 
+            color='#a11bf5'
         )
-        )
-    ])
+    ], style={"margin-top": "20px", "margin-bottom": "0px"})
+
+
 
 def generate_greek_div(greek, exotic_option_type):
     """
@@ -219,45 +231,49 @@ def generate_greek_div(greek, exotic_option_type):
             html.P(id=f"{greek}_put_{exotic_option_type}")
         ]),
 
-        # Store for caching
-        dcc.Store(id=store_id_vs_stock),
-        dcc.Store(id=store_id_vs_strike),
-        dcc.Store(id=store_id_vs_ttm),
-
         # Greek Plots
         dbc.Row([
             # Column 1: Greek vs Stock Price
-            dbc.Col([
-                dcc.Graph(id=f"plot_{greek}_vs_stock_price_{exotic_option_type}", style={"height": "500px"}),
-                html.Div(html.Button(
-                    f"Compute {greek.capitalize()} vs Stock Price", 
-                    id=button_id_vs_stock, 
-                    n_clicks=0, 
-                    className="btn btn-primary mt-3"
-                ), style={"textAlign": "center"})
-            ], width=4),
+            dbc.Col([dcc.Loading([dcc.Store(id=store_id_vs_stock), 
+                                  dcc.Graph(id=f"plot_{greek}_vs_stock_price_{exotic_option_type}", style={"height": "500px"})],  
+                                    overlay_style=OVERLAY_STYLE, 
+                                    type='circle', 
+                                    color='#a11bf5'),
+                    html.Div(html.Button(
+                        f"Compute {greek.capitalize()} vs Stock Price", 
+                        id=button_id_vs_stock, 
+                        n_clicks=0, 
+                        className="btn btn-primary mt-3"
+                    ), style={"textAlign": "center"})
+                ], width=4),
 
             # Column 2: Greek vs Strike Price
-            dbc.Col([
-                dcc.Graph(id=f"plot_{greek}_vs_strike_price_{exotic_option_type}", style={"height": "500px"}),
-                html.Div(html.Button(
-                    f"Compute {greek.capitalize()} vs Strike Price", 
-                    id=button_id_vs_strike, 
-                    n_clicks=0, 
-                    className="btn btn-primary mt-3"
-                ), style={"textAlign": "center"})
-            ], width=4),
+            dbc.Col([dcc.Loading([dcc.Store(id=store_id_vs_strike),
+                             dcc.Graph(id=f"plot_{greek}_vs_strike_price_{exotic_option_type}", style={"height": "500px"})],  
+                                    overlay_style=OVERLAY_STYLE, 
+                                    type='circle', 
+                                    color='#a11bf5'),
+                    html.Div(html.Button(
+                        f"Compute {greek.capitalize()} vs Strike Price", 
+                        id=button_id_vs_strike, 
+                        n_clicks=0, 
+                        className="btn btn-primary mt-3"
+                    ), style={"textAlign": "center"})
+                ], width=4),
 
             # Column 3: Placeholder for additional plots (e.g., Greek vs TTM)
-            dbc.Col([
-                dcc.Graph(id=f"plot_{greek}_vs_ttm_{exotic_option_type}", style={"height": "500px"}),
-                html.Div(html.Button(
-                    f"Compute {greek.capitalize()} vs TTM", 
-                    id=button_id_vs_ttm, 
-                    n_clicks=0, 
-                    className="btn btn-primary mt-3"
-                ), style={"textAlign": "center"})
-            ], width=4),
+            dbc.Col([dcc.Loading([dcc.Store(id=store_id_vs_ttm),
+                                dcc.Graph(id=f"plot_{greek}_vs_ttm_{exotic_option_type}", style={"height": "500px"})],  
+                                                    overlay_style=OVERLAY_STYLE, 
+                                                    type='circle', 
+                                                    color='#a11bf5'),
+                    html.Div(html.Button(
+                        f"Compute {greek.capitalize()} vs TTM", 
+                        id=button_id_vs_ttm, 
+                        n_clicks=0, 
+                        className="btn btn-primary mt-3"
+                    ), style={"textAlign": "center"})
+                ], width=4),
         ])
     ], style={'margin-bottom': '20px'})
 
@@ -324,10 +340,12 @@ def generate_main_div(exotic_option_type):
     return html.Div([
         html.H4(f"{exotic_option_type.capitalize()} Options", style={'margin': '20px'}),
         dbc.Row([
-            dbc.Col(html.Div(className='loader-wrapper',children=[
-                            dcc.Loading(
-                                # type="default",  # Default spinner
-                                children=dcc.Graph(id=f"plot_first_n_simulations_{exotic_option_type}", style={"height": "700px"}))]), width=8),
+            dbc.Col(dcc.Loading([dcc.Graph(id=f"plot_first_n_simulations_{exotic_option_type}", style={"height": "700px"})],          
+                            overlay_style=OVERLAY_STYLE, 
+                            type='circle', 
+                            color='#a11bf5'),
+                    width=8),
+
             dbc.Col([
                 dbc.Row([
                     dbc.Col(generate_input_table(exotic_option_type)),
