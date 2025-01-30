@@ -9,7 +9,8 @@ from pricer.barrier import pricer_barrier, plotter_barrier
 from pricer.european import pricer_european, plotter_european
 from pricer.monte_carlo import monte_carlo_simulations
 import plotly.graph_objects as go
-from app_new_folder.components import generate_main_div, empty_fig, div_models  # Import reusable components
+from app_new_folder.components import generate_main_div, empty_fig  # Import reusable components
+from app_new_folder.components_model_div import  div_models
 from constants import H, S0_RANGE, K_RANGE, B_CALL, B_PUT, N_SIMULATIONS, pricer_mapping, TTM_RANGE
 from greeks.delta import compute_delta
 from greeks.gamma import compute_gamma
@@ -43,7 +44,7 @@ PLOTTERS = {
 menu_bar = html.Div([
     dmc.SegmentedControl(
         id="menu_bar",
-        value="asian",
+        value="models",
         fullWidth=True,
         data=[
             {"value": "models", "label": "Models"},
@@ -56,6 +57,10 @@ menu_bar = html.Div([
     )
 ])
 
+div_overlay = html.Div(id="loading-overlay", className="loading-overlay", children=[
+        html.Div(className="spinner")  # Spinner
+    ], style={"display": "none"})
+
 # Generate divs for exotic options
 div_asian = generate_main_div("asian")
 div_lookback = generate_main_div("lookback")
@@ -67,6 +72,7 @@ div_european = html.Div([html.H1(' NOTE: For european div, include BS pricing'),
 app.layout = html.Div([
     html.H1("Price My Options", style={"textAlign": "center", "margin-top": "20px"}),
     menu_bar,
+    div_overlay,
     div_models,
     div_asian,
     div_lookback,
@@ -106,10 +112,18 @@ def show_hidden_div(input_value):
     return show_div_models, show_div_asian, show_div_lookback, show_div_barrier, show_div_european
 
 
-
+@app.callback(
+    Output("loading-overlay", "style"),  # Control the loading overlay
+    [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
+    prevent_initial_call=True
+)
+def show_loading(*n_clicks):
+    """ Show the loading spinner when a button is clicked. """
+    return {"display": "flex"}  # Show spinner
 
 @app.callback(
-    [Output(f"plot_first_n_simulations_{exotic}", "figure") for exotic in EXOTIC_OPTION_TYPES],
+    [Output(f"plot_first_n_simulations_{exotic}", "figure") for exotic in EXOTIC_OPTION_TYPES] +
+    [Output("loading-overlay", "style")],  # Add loading overlay control
     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
     [
         State(f"input_S0_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
@@ -125,6 +139,7 @@ def show_hidden_div(input_value):
         State("input_B_call_barrier", "value"),
         State("input_B_put_barrier", "value"),
     ],
+    prevent_initial_call=True
 )
 def show_plot_first_n_simulations(*args):
     """
@@ -176,7 +191,10 @@ def show_plot_first_n_simulations(*args):
         else:
             figures.append(empty_fig)  # Empty figure if no clicks or missing Z_precomputed
 
-    return tuple(figures)
+    # Hide the loading overlay after processing
+    loading_style = {"display": "none"}
+
+    return tuple(figures) + (loading_style,)
 
 
 
