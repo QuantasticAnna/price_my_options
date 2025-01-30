@@ -1,27 +1,51 @@
-.loading-overlay {
+@keyframes fadein {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Ensure loading div stays visible */
+.loader-wrapper > div {
+    visibility: visible !important; /* Force visibility */
+}
+
+/* Keep the table/graph visible while loading */
+._dash-loading-callback {
+    position: relative; /* Ensures overlay stays within the component */
+}
+
+/* Transparent overlay while keeping the table/graph visible */
+._dash-loading {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.6); /* Semi-transparent background */
-    backdrop-filter: blur(3px); /* Blur effect for better visibility */
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000; /* Ensure it appears above components */
+    pointer-events: none;  /* Allows interaction with the table/graph */
+    background: rgba(255, 255, 255, 0.3); /* Light transparency */
+    backdrop-filter: blur(2px); /* Slight blur */
+    opacity: 1; /* Ensure visibility */
 }
 
-.spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid rgba(0, 0, 0, 0.3);
-    border-top: 5px solid #3498db; /* Blue color for spinning effect */
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+/* Force the loading spinner to always appear */
+._dash-loading > div {
+    visibility: visible !important;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+/* Customize the loading text */
+._dash-loading::after {
+    content: "Loading...";
+    font-size: 18px;
+    font-weight: bold;
+    color: #3498db; /* Blue color */
+    background: rgba(255, 255, 255, 0.8); /* Light background for readability */
+    padding: 10px 15px;
+    border-radius: 5px;
+    animation: fadein 0.5s ease-in-out;
 }

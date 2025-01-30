@@ -103,6 +103,12 @@ def generate_input_table(exotic_option_type):
 def generate_greek_table(exotic_option_type):
     return html.Div([
         html.H4(f"{exotic_option_type.capitalize()} Option Greeks", className="text-center text-light"),
+
+            # Loading spinner wraps the entire table
+        dcc.Loading(
+            type="default",  # Default spinner
+            children=
+
         dbc.Table([
             html.Thead(html.Tr([
                 html.Th("Greek", className="text-light", style={"width": "50%"}),
@@ -143,35 +149,40 @@ def generate_greek_table(exotic_option_type):
             responsive=True,
             striped=True,
             style={"margin-top": "20px"}
-        )
+        ))
     ])
 
 # Option pricing table
 def generate_option_prices_table(exotic_option_type):
     return html.Div([
         html.H4(f"{exotic_option_type.capitalize()} Option Prices", className="text-center text-light"),
-        dbc.Table([
-            html.Thead(html.Tr([
-                html.Th("Option", className="text-light", style={"width": "70%"}),  # Option column
-                html.Th("Price", className="text-light", style={"width": "30%"}),  # Price column
-            ])),
-            html.Tbody([
-                html.Tr([
-                    html.Td("Call", className="text-light", style={"whiteSpace": "nowrap"}),  # Call row
-                    html.Td(html.Div(id=f"price_call_{exotic_option_type}", className="text-light")),  # Placeholder for Call price
-                ]),
-                html.Tr([
-                    html.Td("Put", className="text-light", style={"whiteSpace": "nowrap"}),  # Put row
-                    html.Td(html.Div(id=f"price_put_{exotic_option_type}", className="text-light")),  # Placeholder for Put price
-                ]),
-            ])
-        ],
+
+            # Loading spinner wraps the entire table
+        dcc.Loading(
+            type="default",  # Default spinner
+            children=dbc.Table([
+                    html.Thead(html.Tr([
+                        html.Th("Option", className="text-light", style={"width": "70%"}),  # Option column
+                        html.Th("Price", className="text-light", style={"width": "30%"}),  # Price column
+                    ])),
+                    html.Tbody([
+                        html.Tr([
+                            html.Td("Call", className="text-light", style={"whiteSpace": "nowrap"}),  # Call row
+                            html.Td(html.Div(id=f"price_call_{exotic_option_type}", className="text-light")),  # Placeholder for Call price
+                        ]),
+                        html.Tr([
+                            html.Td("Put", className="text-light", style={"whiteSpace": "nowrap"}),  # Put row
+                            html.Td(html.Div(id=f"price_put_{exotic_option_type}", className="text-light")),  # Placeholder for Put price
+                        ]),
+                    ])
+                ],
             bordered=True,
             dark=True,
             hover=True,
             responsive=True,
             striped=True,
             style={"margin-top": "20px"}
+        )
         )
     ])
 
@@ -313,7 +324,10 @@ def generate_main_div(exotic_option_type):
     return html.Div([
         html.H4(f"{exotic_option_type.capitalize()} Options", style={'margin': '20px'}),
         dbc.Row([
-            dbc.Col(html.Div(dcc.Graph(id=f"plot_first_n_simulations_{exotic_option_type}", style={"height": "700px"})), width=8),
+            dbc.Col(html.Div(className='loader-wrapper',children=[
+                            dcc.Loading(
+                                # type="default",  # Default spinner
+                                children=dcc.Graph(id=f"plot_first_n_simulations_{exotic_option_type}", style={"height": "700px"}))]), width=8),
             dbc.Col([
                 dbc.Row([
                     dbc.Col(generate_input_table(exotic_option_type)),
