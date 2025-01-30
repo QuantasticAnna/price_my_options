@@ -1,19 +1,22 @@
-from dash import Dash, Input, Output, html, State, callback_context
+from dash import Dash, Input, Output, html, State, callback_context, no_update, ctx, dcc
 import dash_bootstrap_components as dbc
 import numpy as np
 import dash_mantine_components as dmc
 import joblib
 from pricer_plotter.monte_carlo import monte_carlo_simulations
 import plotly.graph_objects as go
-from app_folder.components import generate_main_div, empty_fig  # Import reusable components
+from app_folder.components import generate_main_div, empty_fig, button_run_new_simulations
 from app_folder.components_model_div import  div_models
-from constants import H, S0_RANGE, K_RANGE, N_SIMULATIONS, PRICER_MAPPING, TTM_RANGE, EXOTIC_OPTION_TYPES, GREEKS, PLOTTERS
+from constants import H, S0_RANGE, K_RANGE, PRICER_MAPPING, TTM_RANGE, EXOTIC_OPTION_TYPES, GREEKS, PLOTTERS, N_SIMULATIONS
 from greeks.delta import compute_delta
 from greeks.gamma import compute_gamma
 from greeks.vega import compute_vega
 from greeks.theta import compute_theta
 from greeks.rho import compute_rho
 from greeks.greeks_functions import plot_greek_vs_stock_price, plot_greek_vs_strike_price, plot_greek_vs_ttm
+import os
+import pandas as pd
+from precompute_data import generate_Z
 
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css"], )
@@ -21,10 +24,15 @@ app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY, "https://cdnjs.c
 app.title = "Price My Options"
 
 # Load precomputed Z
-Z_precomputed = joblib.load("Z_precomputed.joblib")
+# Z_precomputed = joblib.load("Z_precomputed.joblib")
+JOBLIB_FILE = "Z_precomputed.joblib"
 
-
-
+# Load data from Joblib if exists, otherwise precompute
+if os.path.exists(JOBLIB_FILE):
+    Z_precomputed = joblib.load(JOBLIB_FILE)
+else:
+    Z_precomputed = np.random.standard_normal((N_SIMULATIONS, 252))  # Generate if missing
+    joblib.dump(Z_precomputed, JOBLIB_FILE)  # Save initial version
 
 # Menu bar for selecting exotic options
 menu_bar = html.Div([
@@ -44,6 +52,9 @@ menu_bar = html.Div([
 ])
 
 
+                                                
+
+
 # Generate divs for exotic options  #PB: during initial load, this function is called, so we can see the loading spinners
 div_asian = generate_main_div("asian")
 div_lookback = generate_main_div("lookback")
@@ -54,6 +65,9 @@ div_european = generate_main_div("european")
 app.layout = html.Div([
     html.H1("Price My Options", style={"textAlign": "center", "margin-top": "20px"}),
     menu_bar,
+    button_run_new_simulations, # will be used for recompute z, should not appear in div 'Models'
+    dcc.Store(id="data-store"),  # Store cached data in memory,
+    html.Div(id="output-data"),
     div_models,
     div_asian,
     div_lookback,
@@ -93,8 +107,28 @@ def show_hidden_div(input_value):
     return show_div_models, show_div_asian, show_div_lookback, show_div_barrier, show_div_european
 
 
+# Callback to Overwrite Joblib File on "Run New Simulations"
+@app.callback(
+    Output("output-data", "children"),
+    Input("button_run_new_simulations", "n_clicks"),
+    prevent_initial_call=True
+)
+def recompute_data(n_clicks):
+    """Recomputes data and overwrites the Joblib file when the button is clicked."""
+    if ctx.triggered_id == "button_run_new_simulations":
+        new_data = np.random.standard_normal((N_SIMULATIONS, 252))  # Generate new Z
+        joblib.dump(new_data, JOBLIB_FILE)  # **Overwrite existing Joblib file**
+        return html.Div(f"New Simulations Generated! Shape: {new_data.shape}")
+    return no_update
 
 
+
+
+
+
+
+
+# Callback to Update Simulation Plots (Always Reads Latest Joblib Data)
 @app.callback(
     [Output(f"plot_first_n_simulations_{exotic}", "figure") for exotic in EXOTIC_OPTION_TYPES],
     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
@@ -115,39 +149,32 @@ def show_hidden_div(input_value):
 )
 def show_plot_first_n_simulations(*args):
     """
-    Callback to generate and update simulation plots for multiple exotic options.
-
-    Parameters:
-        args: A combination of n_clicks and state values dynamically passed.
-
-    Returns:
-        tuple: Figures for each exotic option type.
+    Generates and updates simulation plots for exotic options.
+    Always reads the latest Joblib file for up-to-date data.
     """
     n_exotics = len(EXOTIC_OPTION_TYPES)
-    n_clicks = args[:n_exotics]  # Button clicks for each exotic type
-    states = args[n_exotics:-2]  # Exclude barrier-specific inputs (last two states)
-    B_call, B_put = args[-2], args[-1]  # Barrier-specific inputs
+    n_clicks = args[:n_exotics]  # Button clicks
+    states = args[n_exotics:-2]  # Excluding barrier inputs
+    B_call, B_put = args[-2], args[-1]  # Barrier inputs
 
-    # Reshape states for each exotic option type
-    split_states = [states[i::n_exotics] for i in range(n_exotics)]
+    # Reload latest Z from Joblib (ensures always using fresh data)
+    Z = joblib.load(JOBLIB_FILE)
 
     figures = []
+    split_states = [states[i::n_exotics] for i in range(n_exotics)]
 
     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
-        if clicks > 0 and Z_precomputed is not None:
+        if clicks > 0:
             S0, K, T, r, sigma = state
-            Z = np.array(Z_precomputed)  # Convert Z back to NumPy array
             S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)
 
             if exotic == "barrier":
                 if B_call is None or B_put is None:
-                    figures.append(empty_fig)  # Return empty figure if barriers are missing
+                    figures.append(empty_fig)
                     continue
                 plotter_barrier = PLOTTERS.get(exotic)
                 fig_call, fig_put = plotter_barrier(S, B_call, B_put, n_sim_to_plot=10)
-                figures.append(fig_call)  # Append Down-and-Out Call plot
-                # Uncomment below if Up-and-Out Put is in the layout
-                # figures.append(fig_put)
+                figures.append(fig_call)
             else:
                 plotter = PLOTTERS.get(exotic, None)
                 if plotter is not None:
@@ -160,11 +187,85 @@ def show_plot_first_n_simulations(*args):
                     )
                     figures.append(fig)
                 else:
-                    figures.append(empty_fig)  # Empty figure if no plotter available
+                    figures.append(empty_fig)
         else:
-            figures.append(empty_fig)  # Empty figure if no clicks or missing Z_precomputed
+            figures.append(empty_fig)
 
     return tuple(figures)
+
+
+
+
+# @app.callback(
+#     [Output(f"plot_first_n_simulations_{exotic}", "figure") for exotic in EXOTIC_OPTION_TYPES],
+#     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
+#     [
+#         State(f"input_S0_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_K_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_T_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_r_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_sigma_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State("input_B_call_barrier", "value"),
+#         State("input_B_put_barrier", "value"),
+#     ],
+# )
+# def show_plot_first_n_simulations(*args):
+#     """
+#     Callback to generate and update simulation plots for multiple exotic options.
+
+#     Parameters:
+#         args: A combination of n_clicks and state values dynamically passed.
+
+#     Returns:
+#         tuple: Figures for each exotic option type.
+#     """
+#     n_exotics = len(EXOTIC_OPTION_TYPES)
+#     n_clicks = args[:n_exotics]  # Button clicks for each exotic type
+#     states = args[n_exotics:-2]  # Exclude barrier-specific inputs (last two states)
+#     B_call, B_put = args[-2], args[-1]  # Barrier-specific inputs
+
+#     # Reshape states for each exotic option type
+#     split_states = [states[i::n_exotics] for i in range(n_exotics)]
+
+#     figures = []
+
+#     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
+#         if clicks > 0 and Z_precomputed is not None:
+#             S0, K, T, r, sigma = state
+#             Z = np.array(Z_precomputed)  # Convert Z back to NumPy array
+#             S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)
+
+#             if exotic == "barrier":
+#                 if B_call is None or B_put is None:
+#                     figures.append(empty_fig)  # Return empty figure if barriers are missing
+#                     continue
+#                 plotter_barrier = PLOTTERS.get(exotic)
+#                 fig_call, fig_put = plotter_barrier(S, B_call, B_put, n_sim_to_plot=10)
+#                 figures.append(fig_call)  # Append Down-and-Out Call plot
+#                 # Uncomment below if Up-and-Out Put is in the layout
+#                 # figures.append(fig_put)
+#             else:
+#                 plotter = PLOTTERS.get(exotic, None)
+#                 if plotter is not None:
+#                     fig = plotter(S, n_sim_to_plot=10)
+#                     fig.add_hline(
+#                         y=K,
+#                         line=dict(color="white", width=2, dash="dash"),
+#                         annotation_text=f"Strike Price (K={K})",
+#                         annotation_position="bottom right",
+#                     )
+#                     figures.append(fig)
+#                 else:
+#                     figures.append(empty_fig)  # Empty figure if no plotter available
+#         else:
+#             figures.append(empty_fig)  # Empty figure if no clicks or missing Z_precomputed
+
+#     return tuple(figures)
 
 
 

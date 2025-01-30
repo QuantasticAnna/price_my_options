@@ -1,5 +1,5 @@
 import numpy as np
-from pricer.monte_carlo import monte_carlo_simulations
+from pricer_plotter.monte_carlo import monte_carlo_simulations
 from constants import PRICER_MAPPING
 
 def compute_rho(Z: np.ndarray, 

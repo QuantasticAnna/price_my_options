@@ -49,6 +49,15 @@ OVERLAY_STYLE = {"visibility":"visible",
                  "filter": "blur(3px) brightness(70%) grayscale(50%)",
                  "backgroundColor": "#FFFFFF"}
 
+
+button_run_new_simulations = html.Div(html.Button('Run New Simulations', 
+                                                    id='button_run_new_simulations', 
+                                                    n_clicks=0, 
+                                                    className="btn btn-primary mt-3"
+                                                ), style={"textAlign": "center",
+                                                          'display': 'flex',
+                                                           "justifyContent": "flex-end"})
+
 def generate_input_table(exotic_option_type):
     """
     Generates the input table for exotic option parameters.

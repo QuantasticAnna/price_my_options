@@ -1,10 +1,10 @@
-from pricer.asian import pricer_asian, plotter_asian
-from pricer.barrier import pricer_barrier, plotter_barrier
-from pricer.binary import pricer_binary, plotter_binary
-from pricer.lookback import pricer_lookback, plotter_lookback
-from pricer.range import pricer_range, plotter_range
-from pricer.cliquet import pricer_cliquet, plotter_cliquet
-from pricer.european import pricer_european, plotter_european
+from pricer_plotter.asian import pricer_asian, plotter_asian
+from pricer_plotter.barrier import pricer_barrier, plotter_barrier
+from pricer_plotter.binary import pricer_binary, plotter_binary
+from pricer_plotter.lookback import pricer_lookback, plotter_lookback
+from pricer_plotter.range import pricer_range, plotter_range
+from pricer_plotter.cliquet import pricer_cliquet, plotter_cliquet
+from pricer_plotter.european import pricer_european, plotter_european
 
 
 

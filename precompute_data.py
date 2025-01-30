@@ -11,5 +11,8 @@ def generate_Z(n_simulations=N_SIMULATIONS, n_steps=252, filename="Z_precomputed
     joblib.dump(Z, filename)
     print(f"Precomputed Z saved to {filename}")
 
-# Run this script once to generate and save Z
-generate_Z()
+
+if __name__ == '__main__':
+        
+    # Run this script once to generate and save Z
+    generate_Z()
