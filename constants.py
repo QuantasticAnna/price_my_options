@@ -52,7 +52,7 @@ TTM_RANGE = np.linspace(0.1, 1, 10)
 
 
 # Exotic options dynamically retrieved from menu_bar
-EXOTIC_OPTION_TYPES = ["asian", "lookback", "barrier", "european"] 
+EXOTIC_OPTION_TYPES = ["asian", "lookback", "european", "barrier"] 
 
 GREEKS = ["delta", "gamma", "theta", "vega", "rho"]
 

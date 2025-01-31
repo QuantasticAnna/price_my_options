@@ -16,7 +16,7 @@ from greeks.rho import compute_rho
 from greeks.greeks_functions import plot_greek_vs_stock_price, plot_greek_vs_strike_price, plot_greek_vs_ttm, greek_vs_stock_price, greek_vs_strike_price, greek_vs_ttm
 import os
 import pandas as pd
-from precompute_data import generate_Z, precompute_heavy_data
+from precomputed_data.precompute_data import generate_Z, precompute_heavy_data
 
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css"], )
@@ -24,7 +24,7 @@ app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY, "https://cdnjs.c
 app.title = "Price My Options"
 
 
-JOBLIB_FILE = "data_precomputed.joblib"
+JOBLIB_FILE = "precomputed_data/data_precomputed.joblib"
 
 def load_precomputed_data():
     """Loads precomputed data from Joblib file or generates it if missing."""
@@ -495,12 +495,12 @@ def update_greek_vs_stock_price_results(*args):
 
     # Reshape states for each exotic option type
     split_states = [states[i::n_exotics] for i in range(n_exotics)]
-    JOBLIB_GREEKS_FILE = "all_exotic_greeks_results.joblib"
+    JOBLIB_GREEKS_VS_STOCK_PRICE_FILE = "precomputed_data/precomputed_greeks_vs_stock_price_results.joblib"
     # Load precomputed results if store is empty
     if all(data is None for data in stored_data):
-        if os.path.exists(JOBLIB_GREEKS_FILE):
+        if os.path.exists(JOBLIB_GREEKS_VS_STOCK_PRICE_FILE):
             print("📂 Loading precomputed Greeks from file...")
-            stored_data = joblib.load(JOBLIB_GREEKS_FILE)  # Flat list
+            stored_data = joblib.load(JOBLIB_GREEKS_VS_STOCK_PRICE_FILE)  # Flat list
         else:
             print("⚠️ No precomputed file found. Returning empty results.")
             return tuple(None for _ in range(n_exotics * n_greeks))
