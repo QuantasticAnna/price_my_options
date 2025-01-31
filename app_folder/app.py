@@ -357,6 +357,94 @@ def update_greeks_and_prices(*args):
 
 
 
+# @app.callback(
+#     [
+#         Output(f"store_results_{greek}_vs_stock_price_{exotic}", "data")
+#         for exotic in EXOTIC_OPTION_TYPES
+#         for greek in GREEKS
+#     ],
+#     [
+#         Input(f"button_compute_{greek}_vs_stock_price_{exotic}", "n_clicks")
+#         for exotic in EXOTIC_OPTION_TYPES
+#         for greek in GREEKS
+#     ],
+#     [
+#         State(f"store_results_{greek}_vs_stock_price_{exotic}", "data")
+#         for exotic in EXOTIC_OPTION_TYPES
+#         for greek in GREEKS
+#     ] + [
+#         State(f"input_S0_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_K_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_T_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_r_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_sigma_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State("input_B_call_barrier", "value"),
+#         State("input_B_put_barrier", "value"),
+#     ],
+# )
+# def update_greek_vs_stock_price_results(*args):
+#     """
+#     Callback to update Greek vs Stock Price plots dynamically for multiple exotic options.
+#     """
+#     n_exotics = len(EXOTIC_OPTION_TYPES)
+#     n_greeks = len(GREEKS)
+
+#     # Separate n_clicks, stored data, and states
+#     n_clicks = args[:n_exotics * n_greeks]
+#     stored_data = args[n_exotics * n_greeks: n_exotics * n_greeks * 2]
+#     states = args[n_exotics * n_greeks * 2:]
+
+#     # Extract barrier-specific inputs
+#     B_call, B_put = states[-2], states[-1]
+#     states = states[:-2]  # Exclude barrier inputs from the main states
+
+#     # Group states by exotic type
+#     n_states_per_exotic = 5  # S0, K, T, r, sigma
+#     split_states = [
+#         states[i::n_exotics] for i in range(n_exotics)
+#     ]
+
+#     # Initialize updated plots with empty_fig by default
+#     updated_results = [
+#         stored_data[i] if stored_data[i] is not None else None
+#         for i in range(len(stored_data))
+#     ]
+
+#     for exotic_index, (exotic, state_set) in enumerate(zip(EXOTIC_OPTION_TYPES, split_states)):
+#         S0, K, T, r, sigma = state_set
+
+#         h = H
+#         S0_range = S0_RANGE
+
+#         precomputed_data = joblib.load(JOBLIB_FILE)  
+#         Z = precomputed_data['Z']
+
+
+#         for greek_index, greek in enumerate(GREEKS):
+#             output_index = exotic_index * n_greeks + greek_index
+#             triggered_button = callback_context.triggered[0]["prop_id"].split(".")[0]
+
+#             if triggered_button == f"button_compute_{greek}_vs_stock_price_{exotic}" and Z is not None:
+#                 # Handle barrier-specific logic
+#                 if exotic == "barrier": #TODO: store results instead of plot, cahnge name callback function, change name store
+#                     results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+#                     # plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+#                 else:
+#                     results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
+#                     # plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
+#                 updated_results[output_index] = results
+
+#     return tuple(updated_results)
+
+
+
+## READING FROM PRECOMPUTED FILE IS STORES ARE EMPLTY 
+
 @app.callback(
     [
         Output(f"store_results_{greek}_vs_stock_price_{exotic}", "data")
@@ -389,56 +477,56 @@ def update_greeks_and_prices(*args):
 )
 def update_greek_vs_stock_price_results(*args):
     """
-    Callback to update Greek vs Stock Price plots dynamically for multiple exotic options.
+    Callback to update or retrieve Greek vs Stock Price results.
+    - If store is empty, load from 'all_exotic_greeks_results.joblib'.
+    - If a button is clicked, compute and update results.
     """
     n_exotics = len(EXOTIC_OPTION_TYPES)
     n_greeks = len(GREEKS)
 
-    # Separate n_clicks, stored data, and states
-    n_clicks = args[:n_exotics * n_greeks]
-    stored_data = args[n_exotics * n_greeks: n_exotics * n_greeks * 2]
-    states = args[n_exotics * n_greeks * 2:]
+    # Separate inputs
+    n_clicks = args[:n_exotics * n_greeks]  # Button clicks
+    stored_data = args[n_exotics * n_greeks: n_exotics * n_greeks * 2]  # Stored results
+    states = args[n_exotics * n_greeks * 2:]  # Parameter states
 
-    # Extract barrier-specific inputs
+    # Extract barrier inputs separately
     B_call, B_put = states[-2], states[-1]
     states = states[:-2]  # Exclude barrier inputs from the main states
 
-    # Group states by exotic type
-    n_states_per_exotic = 5  # S0, K, T, r, sigma
-    split_states = [
-        states[i::n_exotics] for i in range(n_exotics)
-    ]
+    # Reshape states for each exotic option type
+    split_states = [states[i::n_exotics] for i in range(n_exotics)]
+    JOBLIB_GREEKS_FILE = "all_exotic_greeks_results.joblib"
+    # Load precomputed results if store is empty
+    if all(data is None for data in stored_data):
+        if os.path.exists(JOBLIB_GREEKS_FILE):
+            print("📂 Loading precomputed Greeks from file...")
+            stored_data = joblib.load(JOBLIB_GREEKS_FILE)  # Flat list
+        else:
+            print("⚠️ No precomputed file found. Returning empty results.")
+            return tuple(None for _ in range(n_exotics * n_greeks))
 
-    # Initialize updated plots with empty_fig by default
-    updated_results = [
-        stored_data[i] if stored_data[i] is not None else None
-        for i in range(len(stored_data))
-    ]
+    # Convert stored_data to list if it's a tuple
+    updated_results = list(stored_data)
 
+    # Load latest Z from Joblib
+    precomputed_data = joblib.load(JOBLIB_FILE)
+    Z = precomputed_data['Z']
+
+    # Compute missing results based on button clicks
     for exotic_index, (exotic, state_set) in enumerate(zip(EXOTIC_OPTION_TYPES, split_states)):
         S0, K, T, r, sigma = state_set
 
         h = H
         S0_range = S0_RANGE
 
-        precomputed_data = joblib.load(JOBLIB_FILE)  
-        Z = precomputed_data['Z']
-
-
-
         for greek_index, greek in enumerate(GREEKS):
             output_index = exotic_index * n_greeks + greek_index
             triggered_button = callback_context.triggered[0]["prop_id"].split(".")[0]
 
+            # If a button was clicked, recompute the result
             if triggered_button == f"button_compute_{greek}_vs_stock_price_{exotic}" and Z is not None:
-                # Handle barrier-specific logic
-                if exotic == "barrier": #TODO: store results instead of plot, cahnge name callback function, change name store
-                    results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
-                    # plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
-                else:
-                    results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
-                    # plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
-                updated_results[output_index] = results
+                results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
+                updated_results[output_index] = results  # Store updated results
 
     return tuple(updated_results)
 
