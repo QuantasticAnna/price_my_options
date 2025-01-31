@@ -7,7 +7,7 @@ from greeks.greeks_functions import greek_vs_stock_price, greek_vs_strike_price,
 # because when we compute Z from the UI, it takes a lot of time 
 
 # Precompute Z and store it
-def generate_Z(n_simulations=N_SIMULATIONS, n_steps=252, filename="Z_precomputed.joblib"):
+def generate_Z(n_simulations=N_SIMULATIONS, n_steps=252, filename="precomputed_data/Z_precomputed.joblib"):
     Z = np.random.standard_normal((n_simulations, n_steps))
     joblib.dump(Z, filename)
     print(f"Precomputed Z saved to {filename}")
@@ -29,7 +29,7 @@ def default_input_values():
     return N_SIMULATIONS, n_steps, S0, K, T, r, sigma, B_call, B_put, h #ranges? 
 
 
-def precompute_heavy_data(filename="data_precomputed.joblib"):
+def precompute_heavy_data(filename="precomputed_data/data_precomputed.joblib"):
 
     N_SIMULATIONS, n_steps, S0, K, T, r, sigma, B_call, B_put, h = default_input_values()
 
@@ -48,7 +48,7 @@ def precompute_heavy_data(filename="data_precomputed.joblib"):
 
 
 
-JOBLIB_GREEKS_VS_STOCK_PRICE_FILE = "precomputed_greeks_vs_stock_price_results.joblib"
+JOBLIB_GREEKS_VS_STOCK_PRICE_FILE = "precomputed_data/precomputed_greeks_vs_stock_price_results.joblib"
 def precompute_results_greek_vs_stock_price():
     """
     Precomputes Greek vs Stock Price results for all exotic options, including a special case for barrier options.
@@ -90,7 +90,7 @@ def precompute_results_greek_vs_stock_price():
     return all_results_list  # Flat list matching Dash callback output
 
 
-JOBLIB_GREEKS_VS_STRIKE_PRICE_FILE = "precomputed_greeks_vs_strike_price_results.joblib"
+JOBLIB_GREEKS_VS_STRIKE_PRICE_FILE = "precomputed_data/precomputed_greeks_vs_strike_price_results.joblib"
 def precompute_results_greek_vs_strike_price():
     """
     Precomputes Greek vs Stock Price results for all exotic options, including a special case for barrier options.
@@ -132,7 +132,7 @@ def precompute_results_greek_vs_strike_price():
     return all_results_list  # Flat list matching Dash callback output
 
 
-JOBLIB_GREEKS_VS_TTM_FILE = "precomputed_greeks_vs_ttm_results.joblib"
+JOBLIB_GREEKS_VS_TTM_FILE = "precomputed_data/precomputed_greeks_vs_ttm_results.joblib"
 def precompute_results_greek_vs_ttm():
     """
     Precomputes Greek vs Stock Price results for all exotic options, including a special case for barrier options.

@@ -69,8 +69,8 @@ app.layout = html.Div([
     html.H1("Price My Options", style={"textAlign": "center", "margin-top": "20px"}),
     menu_bar,
     button_run_new_simulations, # will be used for recompute z, should not appear in div 'Models'
-    dcc.Store(id="data-store"),  # Store cached data in memory,
-    html.Div(id="output-data"),
+    dcc.Store(id="store_is_simulation_updated", data=False),  # Store cached data in memory,
+    html.Div(id="output-data"),  #get rid of this 
     div_models,
     div_asian,
     div_lookback,
@@ -111,26 +111,96 @@ def show_hidden_div(input_value):
 
 
 @app.callback(
-    Output("output-data", "children"),
+    [Output("output-data", "children"), Output("store_is_simulation_updated", "data")],
     Input("button_run_new_simulations", "n_clicks"),
     prevent_initial_call=True
 )
 def recompute_data(n_clicks):
-    """Recomputes all precomputed data and overwrites the Joblib file."""
+    """Recomputes all precomputed data and updates store to trigger graph refresh."""
     if ctx.triggered_id == "button_run_new_simulations":
-        precompute_heavy_data()  # Recompute all precomputed values and save
-        return html.Div("✅ New Simulations Generated & Data Overwritten!")
-    
-    return no_update
+        precompute_heavy_data()  # Overwrite the Joblib file
+        return "✅ New Simulations Generated & Data Overwritten!", True  # Store becomes True
+
+    return no_update, no_update
 
 
 
 
 
-# Callback to Update Simulation Plots (Always Reads Latest Joblib Data)
+# # Callback to Update Simulation Plots (Always Reads Latest Joblib Data)
+# @app.callback(
+#     [Output(f"plot_first_n_simulations_{exotic}", "figure") for exotic in EXOTIC_OPTION_TYPES],
+#     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
+#     [
+#         State(f"input_S0_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_K_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_T_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_r_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State(f"input_sigma_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
+#     ] + [
+#         State("input_B_call_barrier", "value"),
+#         State("input_B_put_barrier", "value"),
+#     ],
+# )
+# def show_plot_first_n_simulations(*args):
+#     """
+#     Generates and updates simulation plots for exotic options.
+#     Always reads the latest Joblib file for up-to-date data.
+#     """
+#     n_exotics = len(EXOTIC_OPTION_TYPES)
+#     n_clicks = args[:n_exotics]  # Button clicks
+#     states = args[n_exotics:-2]  # Excluding barrier inputs
+#     B_call, B_put = args[-2], args[-1]  # Barrier inputs
+
+#     precomputed_data = joblib.load(JOBLIB_FILE)  
+
+#     Z = precomputed_data['Z']
+#     S = precomputed_data['S']
+
+
+#     figures = []
+#     split_states = [states[i::n_exotics] for i in range(n_exotics)]
+
+#     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
+#         if clicks > 0:
+#             S0, K, T, r, sigma = state
+
+#             if exotic == "barrier":
+#                 if B_call is None or B_put is None:
+#                     figures.append(empty_fig)
+#                     continue
+#                 plotter_barrier = PLOTTERS.get(exotic)
+#                 fig_call, fig_put = plotter_barrier(S, B_call, B_put, n_sim_to_plot=10)
+#                 figures.append(fig_call)
+#             else:
+#                 plotter = PLOTTERS.get(exotic, None)
+#                 if plotter is not None:
+#                     fig = plotter(S, n_sim_to_plot=10)
+#                     fig.add_hline(
+#                         y=K,
+#                         line=dict(color="white", width=2, dash="dash"),
+#                         annotation_text=f"Strike Price (K={K})",
+#                         annotation_position="bottom right",
+#                     )
+#                     figures.append(fig)
+#                 else:
+#                     figures.append(empty_fig)
+#         else:
+#             figures.append(empty_fig)
+
+#     return tuple(figures)
 @app.callback(
     [Output(f"plot_first_n_simulations_{exotic}", "figure") for exotic in EXOTIC_OPTION_TYPES],
-    [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
+    [
+        Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES
+    ] + [
+        Input("menu_bar", "value"),
+        Input("store_is_simulation_updated", "data")  # New input for simulation updates
+    ],
     [
         State(f"input_S0_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
     ] + [
@@ -149,26 +219,45 @@ def recompute_data(n_clicks):
 def show_plot_first_n_simulations(*args):
     """
     Generates and updates simulation plots for exotic options.
-    Always reads the latest Joblib file for up-to-date data.
+    Updates when:
+      - A specific button is clicked (button_update_params).
+      - The menu_bar is changed (to an exotic option type).
+      - The store_is_simulation_updated is True (indicating new simulations were run).
     """
     n_exotics = len(EXOTIC_OPTION_TYPES)
-    n_clicks = args[:n_exotics]  # Button clicks
-    states = args[n_exotics:-2]  # Excluding barrier inputs
+    n_clicks = args[:n_exotics]  # Button clicks for parameter updates
+    menu_selection = args[n_exotics]  # Menu selection value
+    simulation_updated = args[n_exotics + 1]  # Whether simulations were updated
+    states = args[n_exotics + 2:-2]  # Exclude barrier inputs
     B_call, B_put = args[-2], args[-1]  # Barrier inputs
 
-    precomputed_data = joblib.load(JOBLIB_FILE)  
-
+    # Load latest Joblib data
+    precomputed_data = joblib.load(JOBLIB_FILE)
     Z = precomputed_data['Z']
     S = precomputed_data['S']
-
 
     figures = []
     split_states = [states[i::n_exotics] for i in range(n_exotics)]
 
-    for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
-        if clicks > 0:
-            S0, K, T, r, sigma = state
+    # Identify which element triggered the callback
+    triggered_element = ctx.triggered_id
 
+    for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
+        S0, K, T, r, sigma = state
+
+        # Condition 1: Button click triggered update
+        if clicks > 0 and triggered_element == f"button_update_params_{exotic}":
+            update_plot = True
+        # Condition 2: Menu selection matches this exotic type
+        elif triggered_element == "menu_bar" and menu_selection == exotic:
+            update_plot = True
+        # Condition 3: Store flag is True (new simulations ran)
+        elif triggered_element == "store_is_simulation_updated" and simulation_updated:
+            update_plot = True
+        else:
+            update_plot = False
+
+        if update_plot:
             if exotic == "barrier":
                 if B_call is None or B_put is None:
                     figures.append(empty_fig)
@@ -193,6 +282,9 @@ def show_plot_first_n_simulations(*args):
             figures.append(empty_fig)
 
     return tuple(figures)
+
+
+
 
 
 
