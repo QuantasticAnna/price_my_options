@@ -16,23 +16,26 @@ from greeks.rho import compute_rho
 from greeks.greeks_functions import plot_greek_vs_stock_price, plot_greek_vs_strike_price, plot_greek_vs_ttm, greek_vs_stock_price, greek_vs_strike_price, greek_vs_ttm
 import os
 import pandas as pd
-from precompute_data import generate_Z
+from precompute_data import generate_Z, precompute_heavy_data
 
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css"], )
 
 app.title = "Price My Options"
 
-# Load precomputed Z
-# Z_precomputed = joblib.load("Z_precomputed.joblib")
-JOBLIB_FILE = "Z_precomputed.joblib"
 
-# Load data from Joblib if exists, otherwise precompute
-if os.path.exists(JOBLIB_FILE):
-    Z_precomputed = joblib.load(JOBLIB_FILE)
-else:
-    Z_precomputed = np.random.standard_normal((N_SIMULATIONS, 252))  # Generate if missing
-    joblib.dump(Z_precomputed, JOBLIB_FILE)  # Save initial version
+JOBLIB_FILE = "data_precomputed.joblib"
+
+def load_precomputed_data():
+    """Loads precomputed data from Joblib file or generates it if missing."""
+    if os.path.exists(JOBLIB_FILE):
+        print(f"🔹 Loading precomputed data from {JOBLIB_FILE}")
+        return joblib.load(JOBLIB_FILE)
+    else:
+        print("⚠️ Precomputed data not found. Generating new data...")
+        precompute_heavy_data()  # Call precompute function to generate and save data
+        return joblib.load(JOBLIB_FILE)  # Load newly generated data
+
 
 # Menu bar for selecting exotic options
 menu_bar = html.Div([
@@ -107,22 +110,18 @@ def show_hidden_div(input_value):
     return show_div_models, show_div_asian, show_div_lookback, show_div_barrier, show_div_european
 
 
-# Callback to Overwrite Joblib File on "Run New Simulations"
 @app.callback(
     Output("output-data", "children"),
     Input("button_run_new_simulations", "n_clicks"),
     prevent_initial_call=True
 )
 def recompute_data(n_clicks):
-    """Recomputes data and overwrites the Joblib file when the button is clicked."""
+    """Recomputes all precomputed data and overwrites the Joblib file."""
     if ctx.triggered_id == "button_run_new_simulations":
-        new_data = np.random.standard_normal((N_SIMULATIONS, 252))  # Generate new Z
-        joblib.dump(new_data, JOBLIB_FILE)  # **Overwrite existing Joblib file**
-        return html.Div(f"New Simulations Generated! Shape: {new_data.shape}")
+        precompute_heavy_data()  # Recompute all precomputed values and save
+        return html.Div("✅ New Simulations Generated & Data Overwritten!")
+    
     return no_update
-
-
-
 
 
 
@@ -157,8 +156,11 @@ def show_plot_first_n_simulations(*args):
     states = args[n_exotics:-2]  # Excluding barrier inputs
     B_call, B_put = args[-2], args[-1]  # Barrier inputs
 
-    # Reload latest Z from Joblib (ensures always using fresh data)
-    Z = joblib.load(JOBLIB_FILE)
+    precomputed_data = joblib.load(JOBLIB_FILE)  
+
+    Z = precomputed_data['Z']
+    S = precomputed_data['S']
+
 
     figures = []
     split_states = [states[i::n_exotics] for i in range(n_exotics)]
@@ -166,7 +168,6 @@ def show_plot_first_n_simulations(*args):
     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
         if clicks > 0:
             S0, K, T, r, sigma = state
-            S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)
 
             if exotic == "barrier":
                 if B_call is None or B_put is None:
@@ -270,37 +271,40 @@ def update_greeks_and_prices(*args):
     table_put_results = []
     price_call_results = []
     price_put_results = []
-
     
+    precomputed_data = joblib.load(JOBLIB_FILE)  
 
+    Z = precomputed_data['Z']
+    S = precomputed_data['S']
+    
     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
 
-        if clicks > 0 and Z_precomputed is not None:
+        if clicks > 0 and Z is not None:
             S0, K, T, r, sigma = state
             h = H
-            Z = np.array(Z_precomputed)  
-            S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)  #NOTE here we call monte_carlo simulation again, should be called once only at maximum 
-
+            Z = np.array(Z)  
+            #S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)  #NOTE here we call monte_carlo simulation again, should be called once only at maximum 
+            # S = precomputed_data['S']
             pricer = PRICER_MAPPING.get(exotic)
 
             # Compute Greeks and Prices
             if exotic == "barrier":
                 # Compute Greeks for barrier options
-                deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
-                gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
-                thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
-                vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
-                rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+                deltas = compute_delta(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+                gammas = compute_gamma(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+                thetas = compute_theta(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+                vegas = compute_vega(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
+                rhos = compute_rho(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
 
                 # Compute Option Prices
                 prices = pricer(S, K, T, r, B_call=B_call, B_put=B_put)
             else:
                 # Compute Greeks for other options
-                deltas = compute_delta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-                gammas = compute_gamma(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-                thetas = compute_theta(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-                vegas = compute_vega(Z_precomputed, S0, K, T, r, sigma, h, exotic)
-                rhos = compute_rho(Z_precomputed, S0, K, T, r, sigma, h, exotic)
+                deltas = compute_delta(Z, S0, K, T, r, sigma, h, exotic)
+                gammas = compute_gamma(Z, S0, K, T, r, sigma, h, exotic)
+                thetas = compute_theta(Z, S0, K, T, r, sigma, h, exotic)
+                vegas = compute_vega(Z, S0, K, T, r, sigma, h, exotic)
+                rhos = compute_rho(Z, S0, K, T, r, sigma, h, exotic)
 
                 # Compute Option Prices
                 prices = pricer(S, K, T, r)
@@ -416,7 +420,11 @@ def update_greek_vs_stock_price_results(*args):
 
         h = H
         S0_range = S0_RANGE
-        Z = Z_precomputed
+
+        precomputed_data = joblib.load(JOBLIB_FILE)  
+        Z = precomputed_data['Z']
+
+
 
         for greek_index, greek in enumerate(GREEKS):
             output_index = exotic_index * n_greeks + greek_index
@@ -522,7 +530,9 @@ def update_greek_vs_strike_price(*args):
 
         h = H
         K_range = K_RANGE  # Define a range of strike prices
-        Z = Z_precomputed
+
+        precomputed_data = joblib.load(JOBLIB_FILE)  
+        Z = precomputed_data['Z']
 
         for greek_index, greek in enumerate(GREEKS):
             output_index = exotic_index * n_greeks + greek_index
@@ -627,7 +637,9 @@ def update_greek_vs_ttm(*args):
 
         h = H
         T_range = TTM_RANGE  # Define a range of TTM values
-        Z = Z_precomputed
+
+        precomputed_data = joblib.load(JOBLIB_FILE)  
+        Z = precomputed_data['Z']
 
         for greek_index, greek in enumerate(GREEKS):
             output_index = exotic_index * n_greeks + greek_index
