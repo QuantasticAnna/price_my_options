@@ -13,7 +13,7 @@ from greeks.gamma import compute_gamma
 from greeks.vega import compute_vega
 from greeks.theta import compute_theta
 from greeks.rho import compute_rho
-from greeks.greeks_functions import plot_greek_vs_stock_price, plot_greek_vs_strike_price, plot_greek_vs_ttm
+from greeks.greeks_functions import plot_greek_vs_stock_price, plot_greek_vs_strike_price, plot_greek_vs_ttm, greek_vs_stock_price, greek_vs_strike_price, greek_vs_ttm
 import os
 import pandas as pd
 from precompute_data import generate_Z
@@ -195,80 +195,6 @@ def show_plot_first_n_simulations(*args):
 
 
 
-
-# @app.callback(
-#     [Output(f"plot_first_n_simulations_{exotic}", "figure") for exotic in EXOTIC_OPTION_TYPES],
-#     [Input(f"button_update_params_{exotic}", "n_clicks") for exotic in EXOTIC_OPTION_TYPES],
-#     [
-#         State(f"input_S0_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_K_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_T_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_r_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State(f"input_sigma_{exotic}", "value") for exotic in EXOTIC_OPTION_TYPES
-#     ] + [
-#         State("input_B_call_barrier", "value"),
-#         State("input_B_put_barrier", "value"),
-#     ],
-# )
-# def show_plot_first_n_simulations(*args):
-#     """
-#     Callback to generate and update simulation plots for multiple exotic options.
-
-#     Parameters:
-#         args: A combination of n_clicks and state values dynamically passed.
-
-#     Returns:
-#         tuple: Figures for each exotic option type.
-#     """
-#     n_exotics = len(EXOTIC_OPTION_TYPES)
-#     n_clicks = args[:n_exotics]  # Button clicks for each exotic type
-#     states = args[n_exotics:-2]  # Exclude barrier-specific inputs (last two states)
-#     B_call, B_put = args[-2], args[-1]  # Barrier-specific inputs
-
-#     # Reshape states for each exotic option type
-#     split_states = [states[i::n_exotics] for i in range(n_exotics)]
-
-#     figures = []
-
-#     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
-#         if clicks > 0 and Z_precomputed is not None:
-#             S0, K, T, r, sigma = state
-#             Z = np.array(Z_precomputed)  # Convert Z back to NumPy array
-#             S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)
-
-#             if exotic == "barrier":
-#                 if B_call is None or B_put is None:
-#                     figures.append(empty_fig)  # Return empty figure if barriers are missing
-#                     continue
-#                 plotter_barrier = PLOTTERS.get(exotic)
-#                 fig_call, fig_put = plotter_barrier(S, B_call, B_put, n_sim_to_plot=10)
-#                 figures.append(fig_call)  # Append Down-and-Out Call plot
-#                 # Uncomment below if Up-and-Out Put is in the layout
-#                 # figures.append(fig_put)
-#             else:
-#                 plotter = PLOTTERS.get(exotic, None)
-#                 if plotter is not None:
-#                     fig = plotter(S, n_sim_to_plot=10)
-#                     fig.add_hline(
-#                         y=K,
-#                         line=dict(color="white", width=2, dash="dash"),
-#                         annotation_text=f"Strike Price (K={K})",
-#                         annotation_position="bottom right",
-#                     )
-#                     figures.append(fig)
-#                 else:
-#                     figures.append(empty_fig)  # Empty figure if no plotter available
-#         else:
-#             figures.append(empty_fig)  # Empty figure if no clicks or missing Z_precomputed
-
-#     return tuple(figures)
-
-
-
 @app.callback(
     [
         # Outputs for divs displaying Greeks
@@ -429,7 +355,7 @@ def update_greeks_and_prices(*args):
 
 @app.callback(
     [
-        Output(f"store_plot_{greek}_vs_stock_price_{exotic}", "data")
+        Output(f"store_results_{greek}_vs_stock_price_{exotic}", "data")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
     ],
@@ -439,7 +365,7 @@ def update_greeks_and_prices(*args):
         for greek in GREEKS
     ],
     [
-        State(f"store_plot_{greek}_vs_stock_price_{exotic}", "data")
+        State(f"store_results_{greek}_vs_stock_price_{exotic}", "data")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
     ] + [
@@ -457,7 +383,7 @@ def update_greeks_and_prices(*args):
         State("input_B_put_barrier", "value"),
     ],
 )
-def update_greek_vs_stock_price_plots(*args):
+def update_greek_vs_stock_price_results(*args):
     """
     Callback to update Greek vs Stock Price plots dynamically for multiple exotic options.
     """
@@ -480,8 +406,8 @@ def update_greek_vs_stock_price_plots(*args):
     ]
 
     # Initialize updated plots with empty_fig by default
-    updated_plots = [
-        stored_data[i] if stored_data[i] is not None else empty_fig
+    updated_results = [
+        stored_data[i] if stored_data[i] is not None else None
         for i in range(len(stored_data))
     ]
 
@@ -498,13 +424,15 @@ def update_greek_vs_stock_price_plots(*args):
 
             if triggered_button == f"button_compute_{greek}_vs_stock_price_{exotic}" and Z is not None:
                 # Handle barrier-specific logic
-                if exotic == "barrier":
-                    plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                if exotic == "barrier": #TODO: store results instead of plot, cahnge name callback function, change name store
+                    results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                    # plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
                 else:
-                    plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
-                updated_plots[output_index] = plot
+                    results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
+                    # plot = plot_greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
+                updated_results[output_index] = results
 
-    return tuple(updated_plots)
+    return tuple(updated_results)
 
 
 @app.callback(
@@ -514,24 +442,26 @@ def update_greek_vs_stock_price_plots(*args):
         for greek in GREEKS
     ],
     [
-        Input(f"store_plot_{greek}_vs_stock_price_{exotic}", "data")
+        Input(f"store_results_{greek}_vs_stock_price_{exotic}", "data")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
     ],
 )
-def update_plots_greek_vs_stock_price_from_store(*stored_data):
+def update_plots_greek_vs_stock_price_from_store(*stored_results):
     """
     Callback to render stored plots in their respective graphs.
     """
-    # return tuple(stored_data)
-    return tuple(stored_data[i] if stored_data[i] is not None else empty_fig for i in range(len(stored_data)))
+    return tuple(
+        plot_greek_vs_stock_price(stored_results[i]) if stored_results[i] is not None else empty_fig
+        for i in range(len(stored_results))
+    )
 
 
 
 
 @app.callback(
     [
-        Output(f"store_plot_{greek}_vs_strike_price_{exotic}", "data")
+        Output(f"store_results_{greek}_vs_strike_price_{exotic}", "data")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
     ],
@@ -541,7 +471,7 @@ def update_plots_greek_vs_stock_price_from_store(*stored_data):
         for greek in GREEKS
     ],
     [
-        State(f"store_plot_{greek}_vs_strike_price_{exotic}", "data")
+        State(f"store_results_{greek}_vs_strike_price_{exotic}", "data")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
     ] + [
@@ -559,7 +489,7 @@ def update_plots_greek_vs_stock_price_from_store(*stored_data):
         State("input_B_put_barrier", "value"),
     ],
 )
-def update_greek_vs_strike_price_plots(*args):
+def update_greek_vs_strike_price(*args):
     """
     Callback to dynamically update Greek vs Strike Price plots for multiple exotic options.
     """
@@ -582,8 +512,8 @@ def update_greek_vs_strike_price_plots(*args):
     ]
 
     # Initialize updated plots with empty_fig by default
-    updated_plots = [
-        stored_data[i] if stored_data[i] is not None else empty_fig
+    updated_results = [
+        stored_data[i] if stored_data[i] is not None else None
         for i in range(len(stored_data))
     ]
 
@@ -601,12 +531,12 @@ def update_greek_vs_strike_price_plots(*args):
             if triggered_button == f"button_compute_{greek}_vs_strike_price_{exotic}" and Z is not None:
                 # Handle barrier-specific logic
                 if exotic == "barrier":
-                    plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                    results = greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
                 else:
-                    plot = plot_greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek)
-                updated_plots[output_index] = plot
+                    results = greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek)
+                updated_results[output_index] = results
 
-    return tuple(updated_plots)
+    return tuple(updated_results)
 
 
 
@@ -618,22 +548,25 @@ def update_greek_vs_strike_price_plots(*args):
         for greek in GREEKS
     ],
     [
-        Input(f"store_plot_{greek}_vs_strike_price_{exotic}", "data")
+        Input(f"store_results_{greek}_vs_strike_price_{exotic}", "data")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
     ],
 )
-def update_plots_greek_vs_strike_price_from_store(*stored_data):
+def update_plots_greek_vs_strike_price_from_store(*stored_results):
     """
     Callback to render stored plots for Greeks vs Strike Price in their respective graphs.
     Returns empty_fig if store data is None.
     """
-    return tuple(stored_data[i] if stored_data[i] is not None else empty_fig for i in range(len(stored_data)))
+    return tuple(
+        plot_greek_vs_strike_price(stored_results[i]) if stored_results[i] is not None else empty_fig
+        for i in range(len(stored_results))
+    )
 
 
 @app.callback(
     [
-        Output(f"store_plot_{greek}_vs_ttm_{exotic}", "data")
+        Output(f"store_results_{greek}_vs_ttm_{exotic}", "data")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
     ],
@@ -643,7 +576,7 @@ def update_plots_greek_vs_strike_price_from_store(*stored_data):
         for greek in GREEKS
     ],
     [
-        State(f"store_plot_{greek}_vs_ttm_{exotic}", "data")
+        State(f"store_results_{greek}_vs_ttm_{exotic}", "data")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
     ] + [
@@ -661,7 +594,7 @@ def update_plots_greek_vs_strike_price_from_store(*stored_data):
         State("input_B_put_barrier", "value"),
     ],
 )
-def update_greek_vs_ttm_plots(*args):
+def update_greek_vs_ttm(*args):
     """
     Callback to dynamically update Greek vs TTM plots for multiple exotic options.
     """
@@ -684,8 +617,8 @@ def update_greek_vs_ttm_plots(*args):
     ]
 
     # Initialize updated plots with empty_fig by default
-    updated_plots = [
-        stored_data[i] if stored_data[i] is not None else empty_fig
+    updated_results = [
+        stored_data[i] if stored_data[i] is not None else None
         for i in range(len(stored_data))
     ]
 
@@ -703,12 +636,12 @@ def update_greek_vs_ttm_plots(*args):
             if triggered_button == f"button_compute_{greek}_vs_ttm_{exotic}" and Z is not None:
                 # Handle barrier-specific logic
                 if exotic == "barrier":
-                    plot = plot_greek_vs_ttm(Z, S0, K, T_range, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                    results = greek_vs_ttm(Z, S0, K, T_range, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
                 else:
-                    plot = plot_greek_vs_ttm(Z, S0, K, T_range, r, sigma, h, exotic, greek)
-                updated_plots[output_index] = plot
+                    results = greek_vs_ttm(Z, S0, K, T_range, r, sigma, h, exotic, greek)
+                updated_results[output_index] = results
 
-    return tuple(updated_plots)
+    return tuple(updated_results)
 
 
 @app.callback(
@@ -718,17 +651,20 @@ def update_greek_vs_ttm_plots(*args):
         for greek in GREEKS
     ],
     [
-        Input(f"store_plot_{greek}_vs_ttm_{exotic}", "data")
+        Input(f"store_results_{greek}_vs_ttm_{exotic}", "data")
         for exotic in EXOTIC_OPTION_TYPES
         for greek in GREEKS
     ],
 )
-def update_plots_greek_vs_ttm_from_store(*stored_data):
+def update_plots_greek_vs_ttm_from_store(*stored_results):
     """
     Callback to render stored plots for Greeks vs TTM in their respective graphs.
     Returns empty_fig if store data is None.
     """
-    return tuple(stored_data[i] if stored_data[i] is not None else empty_fig for i in range(len(stored_data)))
+    return tuple(
+        plot_greek_vs_ttm(stored_results[i]) if stored_results[i] is not None else empty_fig
+        for i in range(len(stored_results))
+    )
 
 
 

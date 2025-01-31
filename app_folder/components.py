@@ -224,9 +224,9 @@ def generate_greek_div(greek, exotic_option_type):
     button_id_vs_ttm = f"button_compute_{greek}_vs_ttm_{exotic_option_type}"
 
     # Store IDs
-    store_id_vs_stock = f"store_plot_{greek}_vs_stock_price_{exotic_option_type}"
-    store_id_vs_strike = f"store_plot_{greek}_vs_strike_price_{exotic_option_type}"
-    store_id_vs_ttm = f"store_plot_{greek}_vs_ttm_{exotic_option_type}"
+    store_id_vs_stock = f"store_results_{greek}_vs_stock_price_{exotic_option_type}"
+    store_id_vs_strike = f"store_results_{greek}_vs_strike_price_{exotic_option_type}"
+    store_id_vs_ttm = f"store_results_{greek}_vs_ttm_{exotic_option_type}"
 
     return html.Div([
         # Title
