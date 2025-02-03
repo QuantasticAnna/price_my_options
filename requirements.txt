@@ -7,3 +7,4 @@ dash-table==5.0.0
 numpy==1.26.4
 plotly==5.9.0
 Flask-Caching==2.3.0
+joblib==1.4.2

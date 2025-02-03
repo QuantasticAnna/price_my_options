@@ -56,6 +56,10 @@ I choose to precomputed some data for a faster initial loading. To minimize the 
     ```
     source venv/bin/activate
     ```
+    - If error ```venv\Scripts\Activate.ps1 cannot be loaded because running scripts is disabled on this system. For more information, see about_Execution_Policies``` run and try again.
+    ```
+    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+    ```
 
 5. Install the project in editable mode
     ```
