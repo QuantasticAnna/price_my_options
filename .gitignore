@@ -100,4 +100,4 @@ Desktop.ini
 *~
 
 # Large joblib files 
-*.joblib
+precomputed_data/data_precomputed.joblib

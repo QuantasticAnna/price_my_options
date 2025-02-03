@@ -1,3 +1,41 @@
+"""
+This script defines various functions for computing and visualizing option Greeks 
+(Delta, Gamma, Vega, Theta, Rho) as a function of key option parameters such as stock price, 
+strike price, time-to-maturity (TTM), and volatility. It is designed to work with both 
+standard and exotic options (e.g., Asian options) using Monte Carlo simulations.
+
+Key Features:
+1. **Greek Computations**:
+    - `greek_vs_stock_price`: Computes Greeks as a function of the stock price (S0).
+    - `greek_vs_strike_price`: Computes Greeks as a function of the strike price (K).
+    - `greek_vs_ttm`: Computes Greeks as a function of time to maturity (T).
+    - `greek_vs_volatility`: Computes Greeks as a function of volatility (σ).
+
+2. **Plotting**:
+    - `plot_greek_vs_stock_price`: Visualizes Greeks against stock price (S0).
+    - `plot_greek_vs_strike_price`: Visualizes Greeks against strike price (K).
+    - `plot_greek_vs_ttm`: Visualizes Greeks against time to maturity (T).
+    - `plot_greek_vs_volatility`: Visualizes Greeks against volatility (σ).
+
+3. **Monte Carlo Integration**:
+    - Uses precomputed random normals (`Z`) to simulate option prices and compute Greeks.
+
+4. **Customizable Options**:
+    - Supports different exotic option types (e.g., Asian options).
+    - Includes flexibility for additional parameters like barrier levels.
+
+Dependencies:
+- `plotly`: For creating interactive plots.
+- `numpy`: For numerical computations.
+- `greeks_mapping`: Maps Greek names to their respective computation functions.
+- `cyborg_template`: Custom Plotly template for consistent plot styling.
+
+Usage:
+1. Precompute random normals (`Z`) for Monte Carlo simulations.
+2. Call the desired Greek computation function (e.g., `greek_vs_stock_price`).
+3. Use the corresponding plot function (e.g., `plot_greek_vs_stock_price`) to visualize results.
+
+"""
 import plotly.graph_objects as go
 from greeks.greeks_map import greeks_mapping
 from custom_templates import cyborg_template
@@ -34,7 +72,14 @@ def greek_vs_stock_price(Z: np.ndarray,
 
     Returns:
         dict: Greeks for calls and puts over the stock price range:
-              {'stock_price': S0_range, 'greek_call': greek_call_list, 'greek_put': greek_put_list}.
+              {'stock_price': S0_range,         
+                'K': K,
+                'r': r,
+                'T': T,
+                'sigma': sigma,
+                'greek': greek, 
+                'greek_call': greek_call_list, 
+                'greek_put': greek_put_list}.
     """
 
     # Fetch the greek from the mapping
@@ -63,21 +108,7 @@ def greek_vs_stock_price(Z: np.ndarray,
     }
 
 
-
-# New plotter, take results as input, so we can store it instead of storing the plot 
 def plot_greek_vs_stock_price(results,
-        
-        #Z: np.ndarray, 
-                              #S0_range: np.ndarray, 
-                              #K: float, 
-                              #T: float,    #maybe K T r Sigma should be returned in results greek_vs_stock_price, so we dont need to pass them as inpu 
-                              #r: float, 
-                              #sigma: float, 
-                              #h: float, 
-                              #exotic_type: str,
-                              #greek: str, 
-                              #n_simulations: int = 100000,
-                              #**kwargs
                               ):
     """
     Plot any greek (call and put) as a function of stock price (S0) using Plotly.
@@ -95,11 +126,7 @@ def plot_greek_vs_stock_price(results,
         n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
         **kwargs: Additional parameters for specific exotic options (e.g., "barrier" for barrier options).
     """
-    
-    # Compute Greek vs Stock Price
-    #results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, greek, n_simulations, **kwargs)
 
-    # unpack results in a better way 
     S0_range = results['stock_price']
     K = results['K']
     T = results['T']
@@ -201,7 +228,14 @@ def greek_vs_strike_price(Z: np.ndarray,
 
     Returns:
         dict: greeks for calls and puts over the STRIKE price range:
-              {'stock_price': S0_range, 'greek_call': greek_call_list, 'greek_put': greek_put_list}.
+              {'strike_price': K_range,
+                'S0': S0,
+                'r': r,
+                'T': T,
+                'sigma': sigma,
+                'greek': greek, 
+                'greek_call': greek_call_list, 
+                'greek_put': greek_put_list}.
     """
 
     # Fetch the greek from the mapping
@@ -233,19 +267,6 @@ def greek_vs_strike_price(Z: np.ndarray,
 def plot_greek_vs_strike_price(results):
     """
     Plot any greek (call and put) as a function of strike price (K) using Plotly.
-
-    Parameters:
-        Z (np.ndarray): Precomputed random normals for Monte Carlo simulation.
-        S0 (float): Stock price
-        K_range (np.array): Array of strike prices to evaluate.
-        T (float): Time to maturity.
-        r (float): Risk-free rate.
-        sigma (float): Volatility.
-        h (float): Small increment for Delta calculation.
-        exotic_type (str): Type of exotic option (e.g., "asian", "barrier").
-        greek (str): The greek we want to compute.
-        n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
-        **kwargs: Additional parameters for specific exotic options (e.g., "barrier" for barrier options).
     """
 
     # unpack results in a better way 
@@ -353,7 +374,14 @@ def greek_vs_ttm(Z: np.ndarray,
 
     Returns:
         dict: Greeks for calls and puts over the stock price range:
-              {'stock_price': S0_range, 'greek_call': greek_call_list, 'greek_put': greek_put_list}.
+              {'K': K,
+                'S0': S0,
+                'r': r,
+                'ttm': T_range,
+                'sigma': sigma,
+                'greek': greek, 
+                'greek_call': greek_call_list, 
+                'greek_put': greek_put_list}.
     """
 
     # Fetch the greek from the mapping
@@ -385,23 +413,7 @@ def greek_vs_ttm(Z: np.ndarray,
 def plot_greek_vs_ttm(results):
     """
     Plot any greek (call and put) as a function of stock price (S0) using Plotly.
-
-    Parameters:
-        Z (np.ndarray): Precomputed random normals for Monte Carlo simulation.
-        S0 (float): Stock price.
-        K (float): Strike price.
-        T_range (np.array): Array of time to maturity values to evaluate.
-        r (float): Risk-free rate.
-        sigma (float): Volatility.
-        h (float): Small increment for Delta calculation.
-        exotic_type (str): Type of exotic option (e.g., "asian", "barrier").
-        greek (str): The greek we want to compute.
-        n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
-        **kwargs: Additional parameters for specific exotic options (e.g., "barrier" for barrier options).
     """
-    
-    # # Compute Greek vs Stock Price
-    # results = greek_vs_ttm(Z, S0, K, T_range, r, sigma, h, exotic_type, greek, n_simulations, **kwargs)
 
     # unpack results in a better way 
     K = results['K']
@@ -506,7 +518,14 @@ def greek_vs_volatility(Z: np.ndarray,
 
     Returns:
         dict: Greeks for calls and puts over the stock price range:
-              {'stock_price': S0_range, 'greek_call': greek_call_list, 'greek_put': greek_put_list}.
+              {'sigma': sigma_range,
+                'S0': S0,
+                'K': K,
+                'r': r,
+                'T': T,
+                'greek': greek, 
+                'greek_call': greek_call_list, 
+                'greek_put': greek_put_list}.
     """
 
     # Fetch the greek from the mapping
@@ -539,23 +558,7 @@ def greek_vs_volatility(Z: np.ndarray,
 def plot_greek_vs_volatility(results):
     """
     Plot any greek (call and put) as a function of stock price (S0) using Plotly.
-
-    Parameters:
-        Z (np.ndarray): Precomputed random normals for Monte Carlo simulation.
-        S0 (float): Stock price.
-        K (float): Strike price.
-        T float): Time to maturity.
-        r (float): Risk-free rate.
-        sigma_range (np.array): Array of volatilities to maturity values to evaluate.
-        h (float): Small increment for Delta calculation.
-        exotic_type (str): Type of exotic option (e.g., "asian", "barrier").
-        greek (str): The greek we want to compute.
-        n_simulations (int): Number of Monte Carlo simulations. Default is 100000.
-        **kwargs: Additional parameters for specific exotic options (e.g., "barrier" for barrier options).
     """
-    
-    # # Compute Greek vs Stock Price
-    # results = greek_vs_volatility(Z, S0, K, T, r, sigma_range, h, exotic_type, greek, n_simulations, **kwargs)
 
     # unpack results in a better way 
     K = results['K']
@@ -654,23 +657,20 @@ if __name__ == "__main__":
     print(datetime.datetime.now())
 
     results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic_type, greek)
-    # fig = plot_greek_vs_stock_price(results)
-    # fig.show()
+    fig = plot_greek_vs_stock_price(results)
+    fig.show()
 
-    # results = greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic_type, greek)
-    # fig = plot_greek_vs_strike_price(results)
-    # fig.show()
+    results = greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic_type, greek)
+    fig = plot_greek_vs_strike_price(results)
+    fig.show()
 
-    # results = greek_vs_ttm(Z, S0, K, T_range, r, sigma, h, exotic_type, greek)
-    # fig = plot_greek_vs_ttm(results)
-    # fig.show()
+    results = greek_vs_ttm(Z, S0, K, T_range, r, sigma, h, exotic_type, greek)
+    fig = plot_greek_vs_ttm(results)
+    fig.show()
 
-    # results = greek_vs_volatility(Z, S0, K, T, r, sigma_range, h, exotic_type, greek)
-    # fig = plot_greek_vs_volatility(results)
-    # fig.show()
+    results = greek_vs_volatility(Z, S0, K, T, r, sigma_range, h, exotic_type, greek)
+    fig = plot_greek_vs_volatility(results)
+    fig.show()
 
     print(datetime.datetime.now())
     print('------------------')
-
-
-# Note: Plot greek vs volatility useful? 

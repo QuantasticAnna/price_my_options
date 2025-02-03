@@ -1,5 +1,5 @@
 """
-reusable_components.py
+components.py
 
 This script contains reusable Dash components and utility functions for building
 layouts and callbacks in a consistent and modular manner for the Dash app. 
@@ -88,7 +88,7 @@ def generate_input_table(exotic_option_type):
                                           style={"height": "30px", 'width': '60px'})),
                     ]),
                     html.Tr([
-                        html.Td("Time to Maturity (T):", className="text-light", style={"whiteSpace": "nowrap"}),
+                        html.Td("Time to Maturity (T): (max 1y)", className="text-light", style={"whiteSpace": "nowrap"}),
                         html.Td(dcc.Input(id=f"input_T_{exotic_option_type}", type="number", value=1, step=0.1,
                                           style={"height": "30px", 'width': '60px'})),
                     ]),

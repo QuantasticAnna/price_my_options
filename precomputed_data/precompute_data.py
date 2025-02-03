@@ -14,7 +14,7 @@ from greeks.greeks_functions import greek_vs_stock_price, greek_vs_strike_price,
 
 
 def default_input_values():
-    N_SIMULATIONS = 500000
+    N_SIMULATIONS = 100000
     n_steps = 252
     S0 = 100
     K = 100
@@ -109,8 +109,8 @@ def precompute_results_greek_vs_strike_price():
 
     # Define exotic options and Greeks
     EXOTIC_OPTION_TYPES = ["asian", "lookback", "european", "barrier"]  # Now includes "barrier"
-    GREEKS = ["delta", "gamma", "theta", "vega", "rho"]
-
+    #GREEKS = ["delta", "gamma", "theta", "vega", "rho"]
+    GREEKS = ["gamma"]
     # Compute results for each exotic type and Greek
     for exotic in EXOTIC_OPTION_TYPES:
         print(f"Precomputing for {exotic}...")
@@ -176,10 +176,12 @@ def precompute_results_greek_vs_ttm():
 
 if __name__ == '__main__':
 
-    all_exotic_greeks_results_stock_price = precompute_results_greek_vs_stock_price()
-    all_exotic_greeks_results_strike_price = precompute_results_greek_vs_strike_price()
-    all_exotic_greeks_results_ttm = precompute_results_greek_vs_ttm()
+    #all_exotic_greeks_results_stock_price = precompute_results_greek_vs_stock_price()
+    # all_exotic_greeks_results_strike_price = precompute_results_greek_vs_strike_price()
+    # all_exotic_greeks_results_ttm = precompute_results_greek_vs_ttm()
 
     precompute_heavy_data()
-    print('---------------------')
+    # print('---------------------')
 
+    #df = joblib.load(JOBLIB_GREEKS_VS_STOCK_PRICE_FILE)
+    #print(df)

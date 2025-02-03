@@ -16,7 +16,7 @@ from greeks.rho import compute_rho
 from greeks.greeks_functions import plot_greek_vs_stock_price, plot_greek_vs_strike_price, plot_greek_vs_ttm, greek_vs_stock_price, greek_vs_strike_price, greek_vs_ttm
 import os
 import pandas as pd
-from precomputed_data.precompute_data import generate_Z, precompute_heavy_data
+from precomputed_data.precompute_data import precompute_heavy_data
 
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets = [dbc.themes.DARKLY, "https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css"], )
@@ -530,7 +530,12 @@ def update_greek_vs_stock_price_results(*args):
 
             # If a button was clicked, recompute the result
             if triggered_button == f"button_compute_{greek}_vs_stock_price_{exotic}" and Z is not None:
-                results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
+
+                if exotic == "barrier":
+                    results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                else:
+                    results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
+                
                 updated_results[output_index] = results  # Store updated results
 
     return tuple(updated_results)

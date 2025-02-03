@@ -1,3 +1,30 @@
+"""
+This script defines and organizes the components for displaying information about various option pricing models 
+in a Dash web application. It includes explanations, formulas, and comparisons for models such as Geometric 
+Brownian Motion, Jump-Diffusion, Heston Model, and more. The components are structured using Dash's core 
+libraries and Dash Bootstrap Components (DBC) for styling.
+
+Key Features:
+- Accordion Structure: Models are displayed in an interactive accordion for easy navigation.
+- Mathematical Details: Includes MathJax-rendered formulas for model descriptions.
+- Tables: Provides summaries of models, their assumptions, best use cases, and suitable exotic options.
+- Interactive Elements: Content is designed to be used in a Dash app with customizable features.
+
+Contents:
+1. **Model Descriptions:** Detailed explanations and formulas for option pricing models.
+2. **Accordion and Tables:** Organized components for displaying models and comparisons.
+3. **Introduction Section:** A brief overview of the purpose of the option pricer.
+4. **Dash Components:** Uses DBC tables and accordions for an interactive UI.
+
+Dependencies:
+- Dash: Core library for building interactive web apps.
+- Dash Bootstrap Components (dbc): Provides Bootstrap styling and components.
+- MathJax: Used for rendering mathematical formulas.
+
+Usage:
+Include this script as part of a larger Dash application to display information about different option pricing 
+models and their use cases.
+"""
 
 from dash import dcc, html
 import dash_bootstrap_components as dbc
@@ -448,9 +475,3 @@ div_models = html.Div([intro_text,
         ], id = 'div_models', style = {'width': '80%', 'margin': 'auto'})
 
 
-# TODO: cahnge a bit the style so it looks better
-    # add in monte carlo a description of accordion and table: model for stock price, used in monte carlo
-    # maybe also center the content of the card 
-    # accordion instead of cards?
-    # add margin, 
-    # fix problem with header of card taht dont use full width

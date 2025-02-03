@@ -30,19 +30,26 @@ def compute_gamma(Z: np.ndarray,
         dict: Gamma for call and put options:
               {'gamma_call': gamma_call, 'gamma_put': gamma_put}.
     """
-    # Gamma_call = gamma_put, so we dont need to make two separate cases 
+    # Gamma call = gamma put only for european options! It is not the case for some exotic options due to  path dependency
 
-    # Compute Delta at S0
-    delta_S0 = compute_delta(Z, S0, K, T, r, sigma, h, exotic_type, n_simulations, **kwargs)['delta_call'] 
+    # Compute Delta at S0 for call and put
+    delta_S0 = compute_delta(Z, S0, K, T, r, sigma, h, exotic_type, n_simulations, **kwargs)
+    delta_S0_call = delta_S0['delta_call']
+    delta_S0_put = delta_S0['delta_put']
 
-    # Compute Delta at S0 + h
-    delta_S0_h = compute_delta(Z, S0 + h, K, T, r, sigma, h, exotic_type, n_simulations,  **kwargs)['delta_call']
+    # Compute Delta at S0 + h for call and put
+    delta_S0_h = compute_delta(Z, S0 + h, K, T, r, sigma, h, exotic_type, n_simulations, **kwargs)
+    delta_S0_h_call = delta_S0_h['delta_call']
+    delta_S0_h_put = delta_S0_h['delta_put']
 
     # Compute Gamma via finite difference
-    gamma = (delta_S0_h - delta_S0) / h
+    gamma_call = (delta_S0_h_call - delta_S0_call) / h
+    gamma_put = (delta_S0_h_put - delta_S0_put) / h
 
-    return {'gamma_call': gamma,
-            'gamma_put': gamma}
+    return {
+        'gamma_call': gamma_call,
+        'gamma_put': gamma_put
+    }
 
 
 
