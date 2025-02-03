@@ -75,11 +75,6 @@ python main.py
 
 Then go to [http://127.0.0.1:8050](http://127.0.0.1:8050) on your browser.
 
-## Project Documentation
-
-![Architecture Overview](documentation/architecture.PNG)
-
-
 
 ## Folder Structure
 
@@ -134,3 +129,15 @@ price_my_options/
 ├── requirements.txt
 └── setup.py
 ```
+
+
+## Project Documentation
+
+![Architecture Overview](documentation/architecture.PNG)
+
+
+## User Interface Example
+
+![UI Example Asian](documentation/screenshot_ui_1.PNG)
+
+![UI Example Asian Greeks](documentation/screenshot_ui_2.PNG)
