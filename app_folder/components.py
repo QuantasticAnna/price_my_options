@@ -228,6 +228,15 @@ def generate_greek_div(greek, exotic_option_type):
     store_id_vs_strike = f"store_results_{greek}_vs_strike_price_{exotic_option_type}"
     store_id_vs_ttm = f"store_results_{greek}_vs_ttm_{exotic_option_type}"
 
+    # Considerations for Gamma
+    gamma_considerations = dbc.Row(dbc.Col(html.P(
+        """Note: The plots for Gamma are not smooth: Gamma represents the second derivative of the option price with respect to the stock price, 
+        which makes it more sensitive to numerical noise. Unlike Delta, achieving a smooth Gamma curve 
+        requires significantly more Monte Carlo simulations and much smaller step sizes in finite difference 
+        calculations. This is due to the amplification of numerical errors when estimating second-order derivatives.""",
+        style={"margin-top": "10px", 'font-style': 'italic'}
+    ), width = 5)) if greek == "gamma" else None
+
     return html.Div([
         # Title
         html.H5(f'{exotic_option_type.capitalize()} {greek.capitalize()}', className="text-center"),
@@ -239,6 +248,9 @@ def generate_greek_div(greek, exotic_option_type):
             html.Label(f"{greek.capitalize()} Put {exotic_option_type.capitalize()}:"),
             html.P(id=f"{greek}_put_{exotic_option_type}")
         ]),
+
+        # Considerations for Gamma
+        gamma_considerations,
 
         # Greek Plots
         dbc.Row([

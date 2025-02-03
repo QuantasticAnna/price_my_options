@@ -430,6 +430,58 @@ option_pricing_models_table = html.Div([html.H3("Summary"),
 )
 ])
 
+exotic_options_table = html.Div([
+    html.H3("Exotic Options Summary"),
+
+    dbc.Table(
+        [
+            html.Thead(
+                html.Tr([
+                    html.Th("Option Type"),
+                    html.Th("Description"),
+                    html.Th("Payoff Formula"),
+                ])
+            ),
+            html.Tbody([
+                html.Tr([
+                    html.Td("Asian Option"),
+                    html.Td("Path-dependent option where the payoff is based on the average price of the underlying asset over a period."),
+                    html.Td("Payoff = max(Average Price - K, 0) for a call, max(K - Average Price, 0) for a put"),
+                ]),
+                html.Tr([
+                    html.Td("Barrier Option"),
+                    html.Td("Option that is either activated (knock-in) or deactivated (knock-out) if the underlying asset reaches a barrier price."),
+                    html.Td("Payoff depends on whether the asset price crosses a barrier B during the option’s life"),
+                ]),
+                html.Tr([
+                    html.Td("Lookback Option"),
+                    html.Td("Payoff depends on the maximum or minimum price of the underlying asset during the option’s life."),
+                    html.Td("Payoff = max(S_max - K, 0) for a call, max(K - S_min, 0) for a put"),
+                ]),
+                html.Tr([
+                    html.Td("Digital (Binary) Option"),
+                    html.Td("Pays a fixed amount or the asset value depending on whether a condition is met at expiration."),
+                    html.Td("Payoff = Fixed amount (Cash-or-Nothing) or Asset price (Asset-or-Nothing) if the condition is met"),
+                ]),
+                html.Tr([
+                    html.Td("Cliquet Option"),
+                    html.Td("Option with periodic resets where gains are locked in at each reset date."),
+                    html.Td("Payoff = sum(max(S_i - S_{i-1}, 0) for each reset period i)"),
+                ]),
+                html.Tr([
+                    html.Td("Range Option"),
+                    html.Td("Payoff depends on how long the underlying asset stays within a predefined price range."),
+                    html.Td("Payoff = K * (Time in Range / Total Time)"),
+                ]),
+            ])
+        ],
+        bordered=True,
+        striped=True,
+        hover=True,
+    )
+], style = {'margin': '20px',
+          'margin-bottom': '50px'})
+
 intro_text = html.Div([html.H2("Introduction"),
                        
                        html.P("""This project is an Exotic Option Pricer build with Python 
@@ -442,16 +494,20 @@ intro_text = html.Div([html.H2("Introduction"),
                         html.P("""In some future updates, the different models and pricing methods 
                                defined in this section will be implemented. Furthermore, other types of exotic options will be added.""")
                        
-                       ], style = {'margin': '20px'})
+                       ], style = {'margin': '20px',
+                                   'margin-bottom': '50px'})
 
 div_models = html.Div([intro_text,
+        html.Div([html.H2("Option pricing methodologies & stock path models"),                
         dbc.Accordion([
             dbc.AccordionItem(monte_carlo_simulation_div, title="Monte Carlo Simulations"),
             dbc.AccordionItem(black_scholes_div, title="Black-Scholes Model"),
             dbc.AccordionItem(binomial_tree_div, title="Binomial Tree Model"),
             dbc.AccordionItem(finite_difference_methods_div, title="Finite Difference Methods"),
             dbc.AccordionItem(option_pricing_models_table, title="Summary"),
-        ], start_collapsed=True, always_open=True)
+        ], start_collapsed=True, always_open=True)], style = {'margin': '20px',
+                                                            'margin-bottom': '50px'}), 
+        exotic_options_table
         ], id = 'div_models', style = {'width': '80%', 'margin': 'auto'})
 
 

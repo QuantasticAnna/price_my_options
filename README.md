@@ -81,31 +81,30 @@ Then go to [http://127.0.0.1:8050](http://127.0.0.1:8050) on your browser.
 
 ```
 price_my_options/
-├── app_folder/
+├── app_folder/ 
 │   ├── __init__.py
-│   ├── app.py
-│   ├── components_model_div.py
-│   ├── components.py
+│   ├── app.py                         # Main entry point for launching the Dash web app
+│   ├── components_model_div.py        # UI components for the tab 'Models'
+│   ├── components.py                  # Reusable UI components such as input forms, tables, graphs
 │
 ├── documentation/
 │   ├── architecture.PNG
-│   ├── info_msg.py
-│   ├── README_models_option_pricing.md
-│   ├── README_models_stock_price.md
-│   ├── README_option_types.md
-│   └── README.md
+│   ├── info_msg.py                    # Info messages that will appear when hovering on 'info' (to do)
+│   ├── models_option_pricing.md       # Explanation of various option pricing models
+│   ├── models_stock_price.md          # Description of stock price evolution models
+│   └── option_types.md                # Overview of exotic option types
 │
-├── greeks/
+├── greeks/                            
 │   ├── __init__.py
 │   ├── delta.py
 │   ├── gamma.py
-│   ├── greeks_functions.py
+│   ├── greeks_functions.py            # Function to compute greeks over stock price, strike, ttm, and plots
 │   ├── greeks_map.py
 │   ├── rho.py
 │   ├── theta.py
 │   └── vega.py
 │
-├── precomputed_data/
+├── precomputed_data/                  # Precomputed Monte Carlo simulations, greeks, for quick app loading
 │   ├── __init__.py
 │   ├── data_precomputed.joblib
 │   ├── precompute_data.py
@@ -113,20 +112,21 @@ price_my_options/
 │   ├── precomputed_greeks_vs_strike_price_results.joblib
 │   └── precomputed_greeks_vs_ttm_results.joblib
 │
-├── pricer_plotter/
+├── pricer_plotter/                    # Pricers and plotters for each option type
 │   ├── __init__.py
 │   ├── asian.py
 │   ├── barrier.py
 │   ├── binary.py
+│   ├── custom_templates.py
 │   ├── cliquet.py
 │   ├── european.py
 │   ├── lookback.py
 │   ├── monte_carlo.py
-│   ├── range.py
+│   └── range.py
 │
 ├── .gitignore
 ├── constants.py
-├── custom_templates.py
+├── README.md
 ├── requirements.txt
 └── setup.py
 ```
