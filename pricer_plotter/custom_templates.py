@@ -1,5 +1,3 @@
-# custom_templates.py
-
 cyborg_template = {
     "layout": {
         "font": {"color": "#d1d1d1"},

@@ -38,7 +38,7 @@ Usage:
 """
 import plotly.graph_objects as go
 from greeks.greeks_map import greeks_mapping
-from custom_templates import cyborg_template
+from pricer_plotter.custom_templates import cyborg_template
 import numpy as np
 import datetime 
 

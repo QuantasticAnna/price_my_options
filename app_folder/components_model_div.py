@@ -1,31 +1,3 @@
-"""
-This script defines and organizes the components for displaying information about various option pricing models 
-in a Dash web application. It includes explanations, formulas, and comparisons for models such as Geometric 
-Brownian Motion, Jump-Diffusion, Heston Model, and more. The components are structured using Dash's core 
-libraries and Dash Bootstrap Components (DBC) for styling.
-
-Key Features:
-- Accordion Structure: Models are displayed in an interactive accordion for easy navigation.
-- Mathematical Details: Includes MathJax-rendered formulas for model descriptions.
-- Tables: Provides summaries of models, their assumptions, best use cases, and suitable exotic options.
-- Interactive Elements: Content is designed to be used in a Dash app with customizable features.
-
-Contents:
-1. **Model Descriptions:** Detailed explanations and formulas for option pricing models.
-2. **Accordion and Tables:** Organized components for displaying models and comparisons.
-3. **Introduction Section:** A brief overview of the purpose of the option pricer.
-4. **Dash Components:** Uses DBC tables and accordions for an interactive UI.
-
-Dependencies:
-- Dash: Core library for building interactive web apps.
-- Dash Bootstrap Components (dbc): Provides Bootstrap styling and components.
-- MathJax: Used for rendering mathematical formulas.
-
-Usage:
-Include this script as part of a larger Dash application to display information about different option pricing 
-models and their use cases.
-"""
-
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 
@@ -460,7 +432,15 @@ option_pricing_models_table = html.Div([html.H3("Summary"),
 
 intro_text = html.Div([html.H2("Introduction"),
                        
-                       html.P("This is the introduction to my option pricer")
+                       html.P("""This project is an Exotic Option Pricer build with Python 
+                              for backend computations and Dash for interactive visualizations. 
+                              It implements Monte Carlo simulations and based on a Geometric Brownian Motion
+                              model to price Asian, Lookback, Barrier (and European) options."""),
+                        html.P("""The ultimate objective of this project is to develop a centralized tool 
+                               for comparing different stock path models and option pricing methodologies. 
+                               Currently, only Monte Carlo simulations using a GBM model are implemented."""),
+                        html.P("""In some future updates, the different models and pricing methods 
+                               defined in this section will be implemented. Furthermore, other types of exotic options will be added.""")
                        
                        ], style = {'margin': '20px'})
 

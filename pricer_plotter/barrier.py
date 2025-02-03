@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from pricer_plotter.monte_carlo import monte_carlo_simulations
-from custom_templates import cyborg_template
+from pricer_plotter.custom_templates import cyborg_template
 
 def pricer_barrier(S: np.ndarray, K: float, T: float, r: float, B_call: float, B_put: float) -> dict:
     """

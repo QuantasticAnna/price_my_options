@@ -40,7 +40,7 @@ and plots while minimizing code duplication.
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
-from custom_templates import cyborg_template
+from pricer_plotter.custom_templates import cyborg_template
 
 empty_fig = go.Figure().update_layout(margin=dict(l=50, r=50, t=50, b=50),
                                       template=cyborg_template)

@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from pricer_plotter.monte_carlo import monte_carlo_simulations, monte_carlo_simulations_heston
-from custom_templates import cyborg_template
+from pricer_plotter.custom_templates import cyborg_template
 import datetime
 
 def pricer_asian(S, K, T, r): #! at some point, add the option arithmetic / geometric for mean computation 

@@ -1,4 +1,4 @@
-## Here all the messages that will be display when hovering over info icon
+## Here all the messages that will be display when hovering over info icon, in a later update
 
 info_main_div = """
 Purpose of the page 

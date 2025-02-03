@@ -64,3 +64,9 @@ PLOTTERS = {
     "barrier": plotter_barrier,
     "european": plotter_european,
 }
+
+
+JOBLIB_DATA_PRECOMPUTED_Z_S_FILE = "precomputed_data/data_precomputed.joblib"
+JOBLIB_GREEKS_VS_STOCK_PRICE_FILE = "precomputed_data/precomputed_greeks_vs_stock_price_results.joblib"
+JOBLIB_GREEKS_VS_STRIKE_PRICE_FILE = "precomputed_data/precomputed_greeks_vs_strike_price_results.joblib"
+JOBLIB_GREEKS_VS_TTM_FILE = "precomputed_data/precomputed_greeks_vs_ttm_results.joblib"

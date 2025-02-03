@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from pricer_plotter.monte_carlo import monte_carlo_simulations
-from custom_templates import cyborg_template
+from pricer_plotter.custom_templates import cyborg_template
 
 def pricer_lookback(S, K, T, r):
     """
