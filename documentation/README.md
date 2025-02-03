@@ -16,4 +16,4 @@ Workflow:
 
 # Project Documentation
 
-![Architecture Overview](architecture.png)
+![Architecture Overview](architecture.PNG)
