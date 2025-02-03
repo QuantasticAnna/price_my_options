@@ -6,15 +6,15 @@ from greeks.greeks_functions import greek_vs_stock_price, greek_vs_strike_price,
 # Temporary: in the first version of the app, Z can not be recompute, its always the same, to facilitate development
 # because when we compute Z from the UI, it takes a lot of time 
 
-# Precompute Z and store it
-def generate_Z(n_simulations=N_SIMULATIONS, n_steps=252, filename="precomputed_data/Z_precomputed.joblib"):
-    Z = np.random.standard_normal((n_simulations, n_steps))
-    joblib.dump(Z, filename)
-    print(f"Precomputed Z saved to {filename}")
+# # Precompute Z and store it
+# def generate_Z(n_simulations=N_SIMULATIONS, n_steps=252, filename="precomputed_data/Z_precomputed.joblib"):
+#     Z = np.random.standard_normal((n_simulations, n_steps))
+#     joblib.dump(Z, filename)
+#     print(f"Precomputed Z saved to {filename}")
 
 
 def default_input_values():
-    N_SIMULATIONS = 100000
+    N_SIMULATIONS = 500000
     n_steps = 252
     S0 = 100
     K = 100
@@ -76,10 +76,10 @@ def precompute_results_greek_vs_stock_price():
             print(f"Computing {greek}...")
             if exotic == "barrier":
                 # Special case for barrier options (requires additional barrier inputs)
-                results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, n_simulations = N_SIMULATIONS, B_call=B_call, B_put=B_put)
             else:
                 # Standard case for other exotic options
-                results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek)
+                results = greek_vs_stock_price(Z, S0_range, K, T, r, sigma, h, exotic, greek, n_simulations = N_SIMULATIONS)
             # Append to flat list
             all_results_list.append(results)
 
@@ -118,10 +118,10 @@ def precompute_results_greek_vs_strike_price():
             print(f"Computing {greek}...")
             if exotic == "barrier":
                 # Special case for barrier options (requires additional barrier inputs)
-                results = greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                results = greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek, n_simulations = N_SIMULATIONS, B_call=B_call, B_put=B_put)
             else:
                 # Standard case for other exotic options
-                results = greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek)
+                results = greek_vs_strike_price(Z, S0, K_range, T, r, sigma, h, exotic, greek, n_simulations = N_SIMULATIONS)
             # Append to flat list
             all_results_list.append(results)
 
@@ -160,10 +160,10 @@ def precompute_results_greek_vs_ttm():
             print(f"Computing {greek}...")
             if exotic == "barrier":
                 # Special case for barrier options (requires additional barrier inputs)
-                results = greek_vs_ttm(Z, S0, K, TTM_RANGE, r, sigma, h, exotic, greek, B_call=B_call, B_put=B_put)
+                results = greek_vs_ttm(Z, S0, K, TTM_RANGE, r, sigma, h, exotic, greek, n_simulations = N_SIMULATIONS, B_call=B_call, B_put=B_put)
             else:
                 # Standard case for other exotic options
-                results = greek_vs_ttm(Z, S0, K, TTM_RANGE, r, sigma, h, exotic, greek)
+                results = greek_vs_ttm(Z, S0, K, TTM_RANGE, r, sigma, h, exotic, greek, n_simulations = N_SIMULATIONS)
             # Append to flat list
             all_results_list.append(results)
 
@@ -179,5 +179,7 @@ if __name__ == '__main__':
     all_exotic_greeks_results_stock_price = precompute_results_greek_vs_stock_price()
     all_exotic_greeks_results_strike_price = precompute_results_greek_vs_strike_price()
     all_exotic_greeks_results_ttm = precompute_results_greek_vs_ttm()
+
+    precompute_heavy_data()
     print('---------------------')
 

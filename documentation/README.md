@@ -12,3 +12,8 @@ Workflow:
     ?. Maybe always make the plot for a high number of simulation (ex 100), then on Dash make a slider that allows user to choose between 0 and 100
 
 --> With this logic, it is very easy to add new types of options
+
+
+# Project Documentation
+
+![Architecture Overview](architecture.png)
