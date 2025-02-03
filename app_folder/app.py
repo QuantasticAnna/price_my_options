@@ -3,10 +3,10 @@ import dash_bootstrap_components as dbc
 import numpy as np
 import dash_mantine_components as dmc
 import joblib
-from app_folder.components import generate_main_div, empty_fig, button_run_new_simulations
+from app_folder.components import generate_main_div, empty_fig, button_run_new_simulations, OVERLAY_STYLE
 from app_folder.components_model_div import  div_models
 from constants import H, S0_RANGE, K_RANGE, PRICER_MAPPING, TTM_RANGE, EXOTIC_OPTION_TYPES, GREEKS, PLOTTERS, \
-    N_SIMULATIONS, JOBLIB_DATA_PRECOMPUTED_Z_S_FILE, JOBLIB_GREEKS_VS_STOCK_PRICE_FILE, JOBLIB_GREEKS_VS_STRIKE_PRICE_FILE, JOBLIB_GREEKS_VS_TTM_FILE
+    N_SIMULATIONS, JOBLIB_DATA_PRECOMPUTED_Z_S_FILE, JOBLIB_GREEKS_VS_STOCK_PRICE_FILE, JOBLIB_GREEKS_VS_STRIKE_PRICE_FILE, JOBLIB_GREEKS_VS_TTM_FILE, JOBLIB_OPTIONS_PRICES_AND_GREEKS
 from greeks.delta import compute_delta
 from greeks.gamma import compute_gamma
 from greeks.vega import compute_vega
@@ -62,7 +62,7 @@ div_european = generate_main_div("european")
 app.layout = html.Div([
     html.H1("Price My Options", style={"textAlign": "center", "margin-top": "20px"}),
     menu_bar,
-    button_run_new_simulations, # will be used for recompute z, should not appear in div 'Models'
+    button_run_new_simulations, # will be used for recompute z, doesn't appear on div_models
     dcc.Store(id="store_is_simulation_updated", data=False),  # Store cached data in memory,
     div_models,
     div_asian,
@@ -102,6 +102,19 @@ def show_hidden_div(input_value):
 
     return show_div_models, show_div_asian, show_div_lookback, show_div_barrier, show_div_european
 
+# Callback to toggle visibility of the button based on the menu bar selection
+@app.callback(
+    Output('button_run_new_simulations', 'style'),
+    [Input('menu_bar', 'value')],
+)
+def toggle_button_visibility(input_value):
+    """
+    This callback hides the button when 'models' is selected in the menu bar.
+    Otherwise, it keeps the button visible.
+    """
+    if input_value == 'models':
+        return {"display": "none"}  # Hide the button
+    return {"display": "block"}  # Show the button
 
 @app.callback(
     [Output("store_is_simulation_updated", "data")],
@@ -267,11 +280,8 @@ def update_greeks_and_prices(*args):
     Callback to compute and display Greek values (Delta, Gamma, Theta, Vega, Rho)
     and Option Prices for multiple exotic options dynamically.
 
-    Parameters:
-        args: Dynamically passed inputs and states.
-
-    Returns:
-        tuple: Greek values and prices for calls and puts for all exotic options.
+    Uses precomputed values on initial load, then switches to real-time computations
+    if the user updates parameters.
     """
 
     n_exotics = len(EXOTIC_OPTION_TYPES)
@@ -288,84 +298,81 @@ def update_greeks_and_prices(*args):
     table_put_results = []
     price_call_results = []
     price_put_results = []
-    
-    precomputed_data = joblib.load(JOBLIB_DATA_PRECOMPUTED_Z_S_FILE)  
 
+    precomputed_data = joblib.load(JOBLIB_DATA_PRECOMPUTED_Z_S_FILE)  
     Z = precomputed_data['Z']
-    
+
     for exotic, clicks, state in zip(EXOTIC_OPTION_TYPES, n_clicks, split_states):
 
-        if clicks > 0 and Z is not None:
+        # Use precomputed values if the button has not been clicked
+        if clicks == 0:
+
+            precomputed_greeks_and_prices = joblib.load(JOBLIB_OPTIONS_PRICES_AND_GREEKS)
+
+            # Load precomputed values for this exotic option
+            deltas = precomputed_greeks_and_prices[exotic]["deltas"]
+            gammas = precomputed_greeks_and_prices[exotic]["gammas"]
+            thetas = precomputed_greeks_and_prices[exotic]["thetas"]
+            vegas = precomputed_greeks_and_prices[exotic]["vegas"]
+            rhos = precomputed_greeks_and_prices[exotic]["rhos"]
+            prices = precomputed_greeks_and_prices[exotic]["prices"]
+        else:
+            # Compute values dynamically if button clicked
             S0, K, T, r, sigma = state
             h = H
             Z = np.array(Z)  
             S = monte_carlo_simulations(Z, S0, T, r, sigma, n_simulations=N_SIMULATIONS)
             pricer = PRICER_MAPPING.get(exotic)
 
-            # Compute Greeks and Prices
             if exotic == "barrier":
-                # Compute Greeks for barrier options
                 deltas = compute_delta(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
                 gammas = compute_gamma(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
                 thetas = compute_theta(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
                 vegas = compute_vega(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
                 rhos = compute_rho(Z, S0, K, T, r, sigma, h, exotic, B_call=B_call, B_put=B_put)
-
-                # Compute Option Prices
                 prices = pricer(S, K, T, r, B_call=B_call, B_put=B_put)
             else:
-                # Compute Greeks for other options
                 deltas = compute_delta(Z, S0, K, T, r, sigma, h, exotic)
                 gammas = compute_gamma(Z, S0, K, T, r, sigma, h, exotic)
                 thetas = compute_theta(Z, S0, K, T, r, sigma, h, exotic)
                 vegas = compute_vega(Z, S0, K, T, r, sigma, h, exotic)
                 rhos = compute_rho(Z, S0, K, T, r, sigma, h, exotic)
-
-                # Compute Option Prices
                 prices = pricer(S, K, T, r)
 
-            # Append results for divs
-            div_results.extend([
-                html.Div(f"{deltas['delta_call']:.2f}"),
-                html.Div(f"{deltas['delta_put']:.2f}"),
-                html.Div(f"{gammas['gamma_call']:.2f}"),
-                html.Div(f"{gammas['gamma_put']:.2f}"),
-                html.Div(f"{thetas['theta_call']:.2f}"),
-                html.Div(f"{thetas['theta_put']:.2f}"),
-                html.Div(f"{vegas['vega_call']:.2f}"),
-                html.Div(f"{vegas['vega_put']:.2f}"),
-                html.Div(f"{rhos['rho_call']:.2f}"),
-                html.Div(f"{rhos['rho_put']:.2f}"),
-            ])
+        # Append results for divs
+        div_results.extend([
+            html.Div(f"{deltas['delta_call']:.2f}"),
+            html.Div(f"{deltas['delta_put']:.2f}"),
+            html.Div(f"{gammas['gamma_call']:.2f}"),
+            html.Div(f"{gammas['gamma_put']:.2f}"),
+            html.Div(f"{thetas['theta_call']:.2f}"),
+            html.Div(f"{thetas['theta_put']:.2f}"),
+            html.Div(f"{vegas['vega_call']:.2f}"),
+            html.Div(f"{vegas['vega_put']:.2f}"),
+            html.Div(f"{rhos['rho_call']:.2f}"),
+            html.Div(f"{rhos['rho_put']:.2f}"),
+        ])
 
-            # Append results for the Greek table
-            table_call_results.extend([
-                f"{deltas['delta_call']:.2f}",
-                f"{gammas['gamma_call']:.2f}",
-                f"{thetas['theta_call']:.2f}",
-                f"{vegas['vega_call']:.2f}",
-                f"{rhos['rho_call']:.2f}",
-            ])
-            table_put_results.extend([
-                f"{deltas['delta_put']:.2f}",
-                f"{gammas['gamma_put']:.2f}",
-                f"{thetas['theta_put']:.2f}",
-                f"{vegas['vega_put']:.2f}",
-                f"{rhos['rho_put']:.2f}",
-            ])
+        # Append results for the Greek table
+        table_call_results.extend([
+            f"{deltas['delta_call']:.2f}",
+            f"{gammas['gamma_call']:.2f}",
+            f"{thetas['theta_call']:.2f}",
+            f"{vegas['vega_call']:.2f}",
+            f"{rhos['rho_call']:.2f}",
+        ])
+        table_put_results.extend([
+            f"{deltas['delta_put']:.2f}",
+            f"{gammas['gamma_put']:.2f}",
+            f"{thetas['theta_put']:.2f}",
+            f"{vegas['vega_put']:.2f}",
+            f"{rhos['rho_put']:.2f}",
+        ])
 
-            # Append results for the Prices table
-            price_call_results.append(f"{prices['price_call']:.2f}")
-            price_put_results.append(f"{prices['price_put']:.2f}")
-        else:
-            # Empty values for divs, table, and prices
-            div_results.extend([html.Div('') for _ in range(n_greeks * 2)])
-            table_call_results.extend(['' for _ in range(n_greeks)])
-            table_put_results.extend(['' for _ in range(n_greeks)])
-            price_call_results.append('')
-            price_put_results.append('')
+        # Append results for the Prices table
+        price_call_results.append(f"{prices['price_call']:.2f}")
+        price_put_results.append(f"{prices['price_put']:.2f}")
 
-    # Combine results for divs, Greek table, and Prices table
     return tuple(div_results + table_call_results + table_put_results + price_call_results + price_put_results)
 
 
@@ -442,7 +449,8 @@ def update_greek_vs_stock_price_results(*args):
         S0, K, T, r, sigma = state_set
 
         h = H
-        S0_range = S0_RANGE
+        # S0_range = S0_RANGE
+        S0_range = np.linspace(S0 * 0.5 , S0 * 1.5, 10)  # We limit the number of points to 10 as it is expensive computation
 
         for greek_index, greek in enumerate(GREEKS):
             output_index = exotic_index * n_greeks + greek_index
@@ -553,7 +561,8 @@ def update_greek_vs_strike_price(*args):
         S0, K, T, r, sigma = state_set
 
         h = H
-        K_range = K_RANGE  # Define a range of strike prices
+        # K_range = K_RANGE  # Define a range of strike prices
+        K_range = np.linspace(S0 * 0.5 , S0 * 1.5, 10)  # We limit the number of points to 10 as it is expensive computation
 
         precomputed_data = joblib.load(JOBLIB_DATA_PRECOMPUTED_Z_S_FILE)  
         Z = precomputed_data['Z']

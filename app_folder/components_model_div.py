@@ -486,7 +486,7 @@ intro_text = html.Div([html.H2("Introduction"),
                        
                        html.P("""This project is an Exotic Option Pricer build with Python 
                               for backend computations and Dash for interactive visualizations. 
-                              It implements Monte Carlo simulations and based on a Geometric Brownian Motion
+                              It implements Monte Carlo simulations based on a Geometric Brownian Motion
                               model to price Asian, Lookback, Barrier (and European) options."""),
                         html.P("""The ultimate objective of this project is to develop a centralized tool 
                                for comparing different stock path models and option pricing methodologies. 
